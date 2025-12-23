@@ -1,0 +1,55 @@
+# Compiled executables
+*.exe
+*.out
+*.app
+
+# Object files
+*.o
+*.obj
+*.a
+*.lib
+
+# Build directory
+build/
+cmake-build-*/
+
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps
+
+# IDE and Editor files
+.vscode/
+.vs/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+
+# OS-specific files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Output images (generated files)
+output.jpg
+output.png
+test_output.*
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Dependencies
+*.d
+
+# Response files
+*.rsp
+
