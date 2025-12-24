@@ -3,7 +3,9 @@
 #include "point_operations_mpi.h"
 #include "noise.h"
 #include "filters.h"
+#include "filters_mpi.h"
 #include "edge_detection.h"
+#include "edge_detection_mpi.h"
 #include "morphological.h"
 #include "geometric.h"
 #include "color_operations.h"
@@ -638,251 +640,320 @@ int main(int argc, char** argv) {
             }
             
             case 30: {
-                // Box Blur
-                if (!currentImage.isValid()) { 
-                    std::cout << "✗ No image loaded.\n"; 
-                    break; 
+                // Box Blur - MPI version with halo exchange
+                int kernelSize = 0;
+                if (rank == 0) {
+                    if (!localChunk.isValid()) {
+                        std::cout << "✗ No image loaded.\n";
+                        kernelSize = 0;
+                    } else {
+                        std::cout << "Enter kernel size (odd number, e.g., 5): ";
+                        std::cin >> kernelSize;
+                        if (kernelSize < 3 || kernelSize % 2 == 0) {
+                            std::cout << "⚠ Warning: Kernel size must be odd and >= 3. Using 5 instead.\n";
+                            kernelSize = 5;
+                        }
+                    }
                 }
-                int size;
-                std::cout << "Enter kernel size (odd number, e.g., 5): ";
-                std::cin >> size;
-                if (size < 3 || size % 2 == 0) {
-                    std::cout << "⚠ Warning: Kernel size must be odd and >= 3. Using 5 instead.\n";
-                    size = 5;
+                MPI_Bcast(&kernelSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                
+                if (kernelSize > 0 && localChunk.isValid()) {
+                    // Start timing
+                    double start_time = MPI_Wtime();
+                    
+                    localChunk = FiltersMPI::boxBlur(localChunk, kernelSize, rank, size);
+                    
+                    // End timing
+                    double end_time = MPI_Wtime();
+                    double elapsed_ms = (end_time - start_time) * 1000.0;
+                    long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
+                    
+                    if (rank == 0) {
+                        appliedOperations.push_back("boxblur" + std::to_string(kernelSize));
+                        std::cout << "✓ Box blur applied in " << std::fixed 
+                                  << std::setprecision(4) << elapsed_ms 
+                                  << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                    }
                 }
-                // Start timing
-                double start_time = MPI_Wtime();
-                
-                currentImage = Filters::boxBlur(currentImage, size);
-                
-                // End timing
-                double end_time = MPI_Wtime();
-                double elapsed_ms = (end_time - start_time) * 1000.0;
-                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
-                
-                appliedOperations.push_back("boxblur" + std::to_string(size));
-                std::cout << "✓ Box blur applied in " << std::fixed 
-                          << std::setprecision(4) << elapsed_ms 
-                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
             case 31: {
-                // Gaussian Blur
-                if (!currentImage.isValid()) { 
-                    std::cout << "✗ No image loaded.\n"; 
-                    break; 
+                // Gaussian Blur - MPI version with halo exchange
+                int kernelSize = 0;
+                float sigma = 0.0f;
+                if (rank == 0) {
+                    if (!localChunk.isValid()) {
+                        std::cout << "✗ No image loaded.\n";
+                        kernelSize = 0;
+                    } else {
+                        std::cout << "Enter kernel size (odd number, e.g., 5): ";
+                        std::cin >> kernelSize;
+                        if (kernelSize < 3 || kernelSize % 2 == 0) {
+                            std::cout << "⚠ Warning: Kernel size must be odd and >= 3. Using 5 instead.\n";
+                            kernelSize = 5;
+                        }
+                        std::cout << "Enter sigma (e.g., 1.4): ";
+                        std::cin >> sigma;
+                    }
                 }
-                int size;
-                float sigma;
-                std::cout << "Enter kernel size (odd number, e.g., 5): ";
-                std::cin >> size;
-                if (size < 3 || size % 2 == 0) {
-                    std::cout << "⚠ Warning: Kernel size must be odd and >= 3. Using 5 instead.\n";
-                    size = 5;
+                MPI_Bcast(&kernelSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                MPI_Bcast(&sigma, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+                
+                if (kernelSize > 0 && localChunk.isValid()) {
+                    // Start timing
+                    double start_time = MPI_Wtime();
+                    
+                    localChunk = FiltersMPI::gaussianBlur(localChunk, kernelSize, sigma, rank, size);
+                    
+                    // End timing
+                    double end_time = MPI_Wtime();
+                    double elapsed_ms = (end_time - start_time) * 1000.0;
+                    long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
+                    
+                    if (rank == 0) {
+                        std::string sigmaStr = std::to_string(sigma);
+                        size_t dotPos = sigmaStr.find(".");
+                        if (dotPos != std::string::npos) {
+                            sigmaStr = sigmaStr.substr(0, dotPos + 2);
+                        }
+                        appliedOperations.push_back("gaussblur" + std::to_string(kernelSize) + "s" + sigmaStr);
+                        std::cout << "✓ Gaussian blur applied in " << std::fixed 
+                                  << std::setprecision(4) << elapsed_ms 
+                                  << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                    }
                 }
-                std::cout << "Enter sigma (e.g., 1.4): ";
-                std::cin >> sigma;
-                // Start timing
-                double start_time = MPI_Wtime();
-                
-                currentImage = Filters::gaussianBlur(currentImage, size, sigma);
-                
-                // End timing
-                double end_time = MPI_Wtime();
-                double elapsed_ms = (end_time - start_time) * 1000.0;
-                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
-                
-                std::string sigmaStr = std::to_string(sigma);
-                size_t dotPos = sigmaStr.find(".");
-                if (dotPos != std::string::npos) {
-                    sigmaStr = sigmaStr.substr(0, dotPos + 2);
-                }
-                appliedOperations.push_back("gaussblur" + std::to_string(size) + "s" + sigmaStr);
-                std::cout << "✓ Gaussian blur applied in " << std::fixed 
-                          << std::setprecision(4) << elapsed_ms 
-                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
             case 32: {
-                // Median Filter
-                if (!currentImage.isValid()) { 
-                    std::cout << "✗ No image loaded.\n"; 
-                    break; 
+                // Median Filter - MPI version with halo exchange
+                int kernelSize = 0;
+                if (rank == 0) {
+                    if (!localChunk.isValid()) {
+                        std::cout << "✗ No image loaded.\n";
+                        kernelSize = 0;
+                    } else {
+                        std::cout << "Enter kernel size (odd number, e.g., 5): ";
+                        std::cin >> kernelSize;
+                        if (kernelSize < 3 || kernelSize % 2 == 0) {
+                            std::cout << "⚠ Warning: Kernel size must be odd and >= 3. Using 5 instead.\n";
+                            kernelSize = 5;
+                        }
+                    }
                 }
-                int size;
-                std::cout << "Enter kernel size (odd number, e.g., 5): ";
-                std::cin >> size;
-                if (size < 3 || size % 2 == 0) {
-                    std::cout << "⚠ Warning: Kernel size must be odd and >= 3. Using 5 instead.\n";
-                    size = 5;
+                MPI_Bcast(&kernelSize, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                
+                if (kernelSize > 0 && localChunk.isValid()) {
+                    // Start timing
+                    double start_time = MPI_Wtime();
+                    
+                    localChunk = FiltersMPI::medianFilter(localChunk, kernelSize, rank, size);
+                    
+                    // End timing
+                    double end_time = MPI_Wtime();
+                    double elapsed_ms = (end_time - start_time) * 1000.0;
+                    long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
+                    
+                    if (rank == 0) {
+                        appliedOperations.push_back("median" + std::to_string(kernelSize));
+                        std::cout << "✓ Median filter applied in " << std::fixed 
+                                  << std::setprecision(4) << elapsed_ms 
+                                  << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                    }
                 }
-                // Start timing
-                double start_time = MPI_Wtime();
-                
-                currentImage = Filters::medianFilter(currentImage, size);
-                
-                // End timing
-                double end_time = MPI_Wtime();
-                double elapsed_ms = (end_time - start_time) * 1000.0;
-                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
-                
-                appliedOperations.push_back("median" + std::to_string(size));
-                std::cout << "✓ Median filter applied in " << std::fixed 
-                          << std::setprecision(4) << elapsed_ms 
-                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
             case 33: {
-                // Bilateral Filter
-                if (!currentImage.isValid()) { 
-                    std::cout << "✗ No image loaded.\n"; 
-                    break; 
+                // Bilateral Filter - MPI version with halo exchange
+                int diameter = 0;
+                double sigmaColor = 0.0, sigmaSpace = 0.0;
+                if (rank == 0) {
+                    if (!localChunk.isValid()) {
+                        std::cout << "✗ No image loaded.\n";
+                        diameter = 0;
+                    } else {
+                        std::cout << "Enter diameter (e.g., 9): ";
+                        std::cin >> diameter;
+                        std::cout << "Enter sigma color (e.g., 75): ";
+                        std::cin >> sigmaColor;
+                        std::cout << "Enter sigma space (e.g., 75): ";
+                        std::cin >> sigmaSpace;
+                    }
                 }
-                int diameter;
-                double sigmaColor, sigmaSpace;
-                std::cout << "Enter diameter (e.g., 9): ";
-                std::cin >> diameter;
-                std::cout << "Enter sigma color (e.g., 75): ";
-                std::cin >> sigmaColor;
-                std::cout << "Enter sigma space (e.g., 75): ";
-                std::cin >> sigmaSpace;
-                // Start timing
-                double start_time = MPI_Wtime();
+                MPI_Bcast(&diameter, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                MPI_Bcast(&sigmaColor, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+                MPI_Bcast(&sigmaSpace, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
                 
-                currentImage = Filters::bilateralFilter(currentImage, diameter, sigmaColor, sigmaSpace);
-                
-                // End timing
-                double end_time = MPI_Wtime();
-                double elapsed_ms = (end_time - start_time) * 1000.0;
-                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
-                
-                appliedOperations.push_back("bilateral" + std::to_string(diameter));
-                std::cout << "✓ Bilateral filter applied in " << std::fixed 
-                          << std::setprecision(4) << elapsed_ms 
-                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                if (diameter > 0 && localChunk.isValid()) {
+                    // Start timing
+                    double start_time = MPI_Wtime();
+                    
+                    localChunk = FiltersMPI::bilateralFilter(localChunk, diameter, sigmaColor, sigmaSpace, rank, size);
+                    
+                    // End timing
+                    double end_time = MPI_Wtime();
+                    double elapsed_ms = (end_time - start_time) * 1000.0;
+                    long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
+                    
+                    if (rank == 0) {
+                        appliedOperations.push_back("bilateral" + std::to_string(diameter));
+                        std::cout << "✓ Bilateral filter applied in " << std::fixed 
+                                  << std::setprecision(4) << elapsed_ms 
+                                  << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                    }
+                }
                 break;
             }
             
             case 40: {
-                // Sobel
-                if (!currentImage.isValid()) { 
-                    std::cout << "✗ No image loaded.\n"; 
-                    break; 
+                // Sobel - MPI version with halo exchange
+                if (!localChunk.isValid()) {
+                    if (rank == 0) {
+                        std::cout << "✗ No image loaded.\n";
+                    }
+                    break;
                 }
+                
                 // Start timing
                 double start_time = MPI_Wtime();
                 
-                currentImage = EdgeDetection::sobel(currentImage);
+                localChunk = EdgeDetectionMPI::sobel(localChunk, rank, size);
                 
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
                 long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
-                appliedOperations.push_back("sobel");
-                std::cout << "✓ Sobel edge detection applied in " << std::fixed 
-                          << std::setprecision(4) << elapsed_ms 
-                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                if (rank == 0) {
+                    appliedOperations.push_back("sobel");
+                    std::cout << "✓ Sobel edge detection applied in " << std::fixed 
+                              << std::setprecision(4) << elapsed_ms 
+                              << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                }
                 break;
             }
             
             case 41: {
-                // Canny
-                if (!currentImage.isValid()) { 
-                    std::cout << "✗ No image loaded.\n"; 
-                    break; 
+                // Canny - MPI version with halo exchange
+                double low = 0.0, high = 0.0;
+                if (rank == 0) {
+                    if (!localChunk.isValid()) {
+                        std::cout << "✗ No image loaded.\n";
+                        low = high = 0.0;
+                    } else {
+                        std::cout << "Enter low threshold (e.g., 50): ";
+                        std::cin >> low;
+                        std::cout << "Enter high threshold (e.g., 150): ";
+                        std::cin >> high;
+                    }
                 }
-                double low, high;
-                std::cout << "Enter low threshold (e.g., 50): ";
-                std::cin >> low;
-                std::cout << "Enter high threshold (e.g., 150): ";
-                std::cin >> high;
-                // Start timing
-                double start_time = MPI_Wtime();
+                MPI_Bcast(&low, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+                MPI_Bcast(&high, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
                 
-                currentImage = EdgeDetection::canny(currentImage, low, high);
-                
-                // End timing
-                double end_time = MPI_Wtime();
-                double elapsed_ms = (end_time - start_time) * 1000.0;
-                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
-                
-                appliedOperations.push_back("canny" + std::to_string((int)low) + "x" + std::to_string((int)high));
-                std::cout << "✓ Canny edge detection applied in " << std::fixed 
-                          << std::setprecision(4) << elapsed_ms 
-                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                if (low > 0 && high > 0 && localChunk.isValid()) {
+                    // Start timing
+                    double start_time = MPI_Wtime();
+                    
+                    localChunk = EdgeDetectionMPI::canny(localChunk, low, high, rank, size);
+                    
+                    // End timing
+                    double end_time = MPI_Wtime();
+                    double elapsed_ms = (end_time - start_time) * 1000.0;
+                    long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
+                    
+                    if (rank == 0) {
+                        appliedOperations.push_back("canny" + std::to_string((int)low) + "x" + std::to_string((int)high));
+                        std::cout << "✓ Canny edge detection applied in " << std::fixed 
+                                  << std::setprecision(4) << elapsed_ms 
+                                  << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                    }
+                }
                 break;
             }
             
             case 42: {
-                // Sharpen
-                if (!currentImage.isValid()) { 
-                    std::cout << "✗ No image loaded.\n"; 
-                    break; 
+                // Sharpen - MPI version with halo exchange
+                if (!localChunk.isValid()) {
+                    if (rank == 0) {
+                        std::cout << "✗ No image loaded.\n";
+                    }
+                    break;
                 }
+                
                 // Start timing
                 double start_time = MPI_Wtime();
                 
-                currentImage = EdgeDetection::sharpen(currentImage);
+                localChunk = EdgeDetectionMPI::sharpen(localChunk, rank, size);
                 
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
                 long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
-                appliedOperations.push_back("sharpen");
-                std::cout << "✓ Sharpen filter applied in " << std::fixed 
-                          << std::setprecision(4) << elapsed_ms 
-                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                if (rank == 0) {
+                    appliedOperations.push_back("sharpen");
+                    std::cout << "✓ Sharpen filter applied in " << std::fixed 
+                              << std::setprecision(4) << elapsed_ms 
+                              << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                }
                 break;
             }
             
             case 43: {
-                // Prewitt
-                if (!currentImage.isValid()) { 
-                    std::cout << "✗ No image loaded.\n"; 
-                    break; 
+                // Prewitt - MPI version with halo exchange
+                if (!localChunk.isValid()) {
+                    if (rank == 0) {
+                        std::cout << "✗ No image loaded.\n";
+                    }
+                    break;
                 }
+                
                 // Start timing
                 double start_time = MPI_Wtime();
                 
-                currentImage = EdgeDetection::prewitt(currentImage);
+                localChunk = EdgeDetectionMPI::prewitt(localChunk, rank, size);
                 
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
                 long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
-                appliedOperations.push_back("prewitt");
-                std::cout << "✓ Prewitt edge detection applied in " << std::fixed 
-                          << std::setprecision(4) << elapsed_ms 
-                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                if (rank == 0) {
+                    appliedOperations.push_back("prewitt");
+                    std::cout << "✓ Prewitt edge detection applied in " << std::fixed 
+                              << std::setprecision(4) << elapsed_ms 
+                              << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                }
                 break;
             }
             
             case 44: {
-                // Laplacian
-                if (!currentImage.isValid()) { 
-                    std::cout << "✗ No image loaded.\n"; 
-                    break; 
+                // Laplacian - MPI version with halo exchange
+                if (!localChunk.isValid()) {
+                    if (rank == 0) {
+                        std::cout << "✗ No image loaded.\n";
+                    }
+                    break;
                 }
+                
                 // Start timing
                 double start_time = MPI_Wtime();
                 
-                currentImage = EdgeDetection::laplacian(currentImage);
+                localChunk = EdgeDetectionMPI::laplacian(localChunk, rank, size);
                 
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
                 long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
-                appliedOperations.push_back("laplacian");
-                std::cout << "✓ Laplacian edge detection applied in " << std::fixed 
-                          << std::setprecision(4) << elapsed_ms 
-                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                if (rank == 0) {
+                    appliedOperations.push_back("laplacian");
+                    std::cout << "✓ Laplacian edge detection applied in " << std::fixed 
+                              << std::setprecision(4) << elapsed_ms 
+                              << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
+                }
                 break;
             }
             

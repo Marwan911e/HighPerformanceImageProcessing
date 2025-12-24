@@ -1,6 +1,7 @@
 #include "mpi_utils.h"
 #include <algorithm>
 #include <cstring>
+#include <vector>
 
 namespace MPIUtils {
 
@@ -52,43 +53,33 @@ void distributeImage(const Image& fullImage, Image& localChunk, int rank, int si
         return;
     }
     
-    // Calculate local dimensions
+    // Calculate local dimensions for this rank
     int localHeight, startRow;
     getLocalDimensions(height, rank, size, localHeight, startRow);
     
     // Create local chunk
     localChunk = Image(width, localHeight, channels);
     
-    if (rank == 0) {
-        // Rank 0 sends chunks to all processes
-        for (int dest = 0; dest < size; ++dest) {
-            int destHeight, destStartRow;
-            getLocalDimensions(height, dest, size, destHeight, destStartRow);
-            
-            if (dest == 0) {
-                // Copy directly for rank 0
-                for (int y = 0; y < destHeight; ++y) {
-                    const uint8_t* srcRow = fullImage.getPixel(0, destStartRow + y);
-                    uint8_t* dstRow = localChunk.getPixel(0, y);
-                    std::memcpy(dstRow, srcRow, width * channels);
-                }
-            } else {
-                // Send to other processes
-                for (int y = 0; y < destHeight; ++y) {
-                    const uint8_t* row = fullImage.getPixel(0, destStartRow + y);
-                    MPI_Send(const_cast<uint8_t*>(row), width * channels, MPI_BYTE, 
-                            dest, 0, MPI_COMM_WORLD);
-                }
-            }
-        }
-    } else {
-        // Other ranks receive their chunk
-        for (int y = 0; y < localHeight; ++y) {
-            uint8_t* row = localChunk.getPixel(0, y);
-            MPI_Recv(row, width * channels, MPI_BYTE, 0, 0, 
-                    MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        }
+    // Prepare arrays for MPI_Scatterv (all ranks need this)
+    std::vector<int> sendcounts(size);
+    std::vector<int> displs(size);
+    int rowSize = width * channels;
+    
+    for (int i = 0; i < size; ++i) {
+        int localH, startR;
+        getLocalDimensions(height, i, size, localH, startR);
+        sendcounts[i] = localH * rowSize;
+        displs[i] = startR * rowSize;
     }
+    
+    // Use MPI_Scatterv for efficient distribution
+    // All processes must call MPI_Scatterv
+    const uint8_t* sendbuf = (rank == 0) ? fullImage.getData() : nullptr;
+    uint8_t* recvbuf = localChunk.getData();
+    int recvcount = localHeight * rowSize;
+    
+    MPI_Scatterv(const_cast<uint8_t*>(sendbuf), sendcounts.data(), displs.data(), MPI_BYTE,
+                 recvbuf, recvcount, MPI_BYTE, 0, MPI_COMM_WORLD);
 }
 
 void gatherImage(const Image& localChunk, Image& fullImage, int rank, int size) {
@@ -112,67 +103,147 @@ void gatherImage(const Image& localChunk, Image& fullImage, int rank, int size) 
         fullImage = Image(width, height, channels);
     }
     
-    // Gather chunks
-    if (rank == 0) {
-        // Rank 0 receives from all processes
-        for (int src = 0; src < size; ++src) {
-            int srcHeight, srcStartRow;
-            getLocalDimensions(height, src, size, srcHeight, srcStartRow);
-            
-            if (src == 0) {
-                // Copy directly from rank 0
-                for (int y = 0; y < srcHeight; ++y) {
-                    const uint8_t* srcRow = localChunk.getPixel(0, y);
-                    uint8_t* dstRow = fullImage.getPixel(0, srcStartRow + y);
-                    std::memcpy(dstRow, srcRow, width * channels);
-                }
-            } else {
-                // Receive from other processes
-                for (int y = 0; y < srcHeight; ++y) {
-                    uint8_t* row = fullImage.getPixel(0, srcStartRow + y);
-                    MPI_Recv(row, width * channels, MPI_BYTE, src, 0, 
-                            MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-                }
-            }
-        }
-    } else {
-        // Other ranks send their chunk
-        for (int y = 0; y < localHeight; ++y) {
-            const uint8_t* row = localChunk.getPixel(0, y);
-            MPI_Send(const_cast<uint8_t*>(row), width * channels, MPI_BYTE, 
-                    0, 0, MPI_COMM_WORLD);
-        }
+    // Prepare arrays for MPI_Gatherv (all ranks need this)
+    std::vector<int> recvcounts(size);
+    std::vector<int> displs(size);
+    int rowSize = width * channels;
+    
+    // Calculate displacements and counts for all ranks
+    for (int i = 0; i < size; ++i) {
+        int localH, startR;
+        getLocalDimensions(height, i, size, localH, startR);
+        recvcounts[i] = localH * rowSize;
+        displs[i] = startR * rowSize;
     }
+    
+    // Use MPI_Gatherv for efficient gathering
+    // All processes must call MPI_Gatherv
+    const uint8_t* sendbuf = localChunk.getData();
+    int sendcount = localHeight * rowSize;
+    uint8_t* recvbuf = (rank == 0) ? fullImage.getData() : nullptr;
+    
+    MPI_Gatherv(const_cast<uint8_t*>(sendbuf), sendcount, MPI_BYTE,
+                recvbuf, recvcounts.data(), displs.data(), MPI_BYTE, 0, MPI_COMM_WORLD);
 }
 
-void exchangeBoundaries(Image& localChunk, int rank, int size, int boundarySize) {
+// Extend image with halo rows (ghost cells) for convolution filters
+Image extendWithHalo(const Image& localChunk, int rank, int size, int haloSize) {
+    if (haloSize == 0) {
+        return localChunk.clone();
+    }
+    
     int width = localChunk.getWidth();
     int height = localChunk.getHeight();
     int channels = localChunk.getChannels();
     int rowSize = width * channels;
     
-    // Exchange with upper neighbor (send top, receive from above)
+    // Calculate extended dimensions
+    int topHalo = (rank > 0) ? haloSize : 0;
+    int bottomHalo = (rank < size - 1) ? haloSize : 0;
+    int extendedHeight = height + topHalo + bottomHalo;
+    
+    // Create extended image
+    Image extended(width, extendedHeight, channels);
+    
+    // Copy original data to center
+    for (int y = 0; y < height; ++y) {
+        const uint8_t* srcRow = localChunk.getPixel(0, y);
+        uint8_t* dstRow = extended.getPixel(0, y + topHalo);
+        std::memcpy(dstRow, srcRow, rowSize);
+    }
+    
+    return extended;
+}
+
+// Exchange boundaries using non-blocking communication
+// Returns extended image with halo rows
+Image exchangeBoundaries(const Image& localChunk, int rank, int size, int haloSize) {
+    if (haloSize == 0) {
+        return localChunk.clone();
+    }
+    
+    int width = localChunk.getWidth();
+    int height = localChunk.getHeight();
+    int channels = localChunk.getChannels();
+    int rowSize = width * channels;
+    
+    // Create extended image with space for halos
+    int topHalo = (rank > 0) ? haloSize : 0;
+    int bottomHalo = (rank < size - 1) ? haloSize : 0;
+    Image extended = extendWithHalo(localChunk, rank, size, haloSize);
+    
+    // Prepare non-blocking communication
+    std::vector<MPI_Request> requests;
+    std::vector<MPI_Status> statuses;
+    
+    // Exchange with upper neighbor (rank-1)
     if (rank > 0) {
-        // Send top boundary to rank-1
-        uint8_t* topRow = localChunk.getPixel(0, 0);
-        MPI_Send(topRow, rowSize * boundarySize, MPI_BYTE, rank - 1, 1, MPI_COMM_WORLD);
+        // Send top boundary rows to rank-1
+        const uint8_t* topRows = localChunk.getPixel(0, 0);
+        MPI_Request sendReq;
+        MPI_Isend(const_cast<uint8_t*>(topRows), rowSize * haloSize, MPI_BYTE, 
+                 rank - 1, 1, MPI_COMM_WORLD, &sendReq);
+        requests.push_back(sendReq);
         
-        // Receive boundary from rank-1 (will be prepended)
-        // Note: This requires extending the image, simplified version here
+        // Receive boundary from rank-1 (will go into top halo)
+        uint8_t* topHaloBuf = extended.getPixel(0, 0);
+        MPI_Request recvReq;
+        MPI_Irecv(topHaloBuf, rowSize * haloSize, MPI_BYTE, 
+                 rank - 1, 2, MPI_COMM_WORLD, &recvReq);
+        requests.push_back(recvReq);
     }
     
-    // Exchange with lower neighbor (send bottom, receive from below)
+    // Exchange with lower neighbor (rank+1)
     if (rank < size - 1) {
-        // Send bottom boundary to rank+1
-        uint8_t* bottomRow = localChunk.getPixel(0, height - boundarySize);
-        MPI_Send(bottomRow, rowSize * boundarySize, MPI_BYTE, rank + 1, 2, MPI_COMM_WORLD);
+        // Send bottom boundary rows to rank+1
+        const uint8_t* bottomRows = localChunk.getPixel(0, height - haloSize);
+        MPI_Request sendReq;
+        MPI_Isend(const_cast<uint8_t*>(bottomRows), rowSize * haloSize, MPI_BYTE, 
+                 rank + 1, 2, MPI_COMM_WORLD, &sendReq);
+        requests.push_back(sendReq);
         
-        // Receive boundary from rank+1 (will be appended)
-        // Note: This requires extending the image, simplified version here
+        // Receive boundary from rank+1 (will go into bottom halo)
+        uint8_t* bottomHaloBuf = extended.getPixel(0, height + topHalo);
+        MPI_Request recvReq;
+        MPI_Irecv(bottomHaloBuf, rowSize * haloSize, MPI_BYTE, 
+                 rank + 1, 1, MPI_COMM_WORLD, &recvReq);
+        requests.push_back(recvReq);
     }
     
-    // For now, this is a placeholder - full implementation would require
-    // creating extended image with ghost cells
+    // Wait for all communication to complete
+    if (!requests.empty()) {
+        statuses.resize(requests.size());
+        MPI_Waitall(requests.size(), requests.data(), statuses.data());
+    }
+    
+    return extended;
+}
+
+// Extract original region from extended image (remove halos)
+Image removeHalo(const Image& extendedImage, int rank, int size, int haloSize) {
+    if (haloSize == 0) {
+        return extendedImage.clone();
+    }
+    
+    int width = extendedImage.getWidth();
+    int extendedHeight = extendedImage.getHeight();
+    int channels = extendedImage.getChannels();
+    
+    int topHalo = (rank > 0) ? haloSize : 0;
+    int bottomHalo = (rank < size - 1) ? haloSize : 0;
+    int originalHeight = extendedHeight - topHalo - bottomHalo;
+    
+    Image result(width, originalHeight, channels);
+    int rowSize = width * channels;
+    
+    // Copy original region (skip halos)
+    for (int y = 0; y < originalHeight; ++y) {
+        const uint8_t* srcRow = extendedImage.getPixel(0, y + topHalo);
+        uint8_t* dstRow = result.getPixel(0, y);
+        std::memcpy(dstRow, srcRow, rowSize);
+    }
+    
+    return result;
 }
 
 } // namespace MPIUtils

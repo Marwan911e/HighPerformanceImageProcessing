@@ -12,7 +12,9 @@ SOURCES = $(SRCDIR)/main.cpp \
           $(SRCDIR)/mpi_utils.cpp \
           $(SRCDIR)/noise.cpp \
           $(SRCDIR)/filters.cpp \
+          $(SRCDIR)/filters_mpi.cpp \
           $(SRCDIR)/edge_detection.cpp \
+          $(SRCDIR)/edge_detection_mpi.cpp \
           $(SRCDIR)/morphological.cpp \
           $(SRCDIR)/geometric.cpp \
           $(SRCDIR)/color_operations.cpp
