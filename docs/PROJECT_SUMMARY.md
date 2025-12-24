@@ -13,12 +13,14 @@
 Two fully functional branches have been created and pushed:
 
 #### **Main Branch** (Serial Implementation)
+
 - **URL**: https://github.com/Marwan911e/HighPerformanceImageProcessing/tree/main
 - **Status**: ✅ Pushed and up-to-date
 - **Purpose**: Baseline serial implementation for reference and debugging
 - **Features**: All 40+ image processing operations implemented
 
 #### **OpenMP Branch** (Parallel Implementation)
+
 - **URL**: https://github.com/Marwan911e/HighPerformanceImageProcessing/tree/openmp
 - **Status**: ✅ Pushed and up-to-date
 - **Purpose**: High-performance parallel implementation
@@ -31,9 +33,11 @@ Two fully functional branches have been created and pushed:
 All documentation files have been created and pushed to **both branches**:
 
 #### 📘 README.md (Main Project Documentation)
+
 **Size**: ~1000 lines of comprehensive documentation
 
 **Includes**:
+
 - ✅ Complete project overview and introduction
 - ✅ Detailed feature list (40+ operations)
 - ✅ Branch structure explanation (main vs openmp)
@@ -51,9 +55,11 @@ All documentation files have been created and pushed to **both branches**:
 - ✅ Contact and support information
 
 #### 📗 OPENMP_IMPLEMENTATION.md (OpenMP Technical Guide)
+
 **Size**: ~250 lines of technical documentation
 
 **Includes**:
+
 - ✅ OpenMP parallelization strategy overview
 - ✅ Compilation requirements and flags
 - ✅ Detailed explanation of parallelization techniques:
@@ -69,9 +75,11 @@ All documentation files have been created and pushed to **both branches**:
 - ✅ Comparison with other parallelization approaches (MPI, CUDA, OpenCL)
 
 #### 📙 BRANCH_COMPARISON.md (Branch Comparison Guide)
+
 **Size**: ~200 lines
 
 **Includes**:
+
 - ✅ Side-by-side comparison of main vs openmp branches
 - ✅ Code changes summary
 - ✅ Performance characteristics comparison
@@ -85,9 +93,11 @@ All documentation files have been created and pushed to **both branches**:
 - ✅ Summary comparison table
 
 #### 📕 QUICK_START.md (Quick Reference Guide)
+
 **Size**: ~250 lines
 
 **Includes**:
+
 - ✅ Fast-track instructions for first-time users
 - ✅ Common operation examples
 - ✅ OpenMP performance tips
@@ -105,6 +115,7 @@ All documentation files have been created and pushed to **both branches**:
 #### Parallelized Operations (OpenMP Branch)
 
 **Point Operations** (9 functions):
+
 - ✅ grayscale() - Parallel pixel-wise conversion
 - ✅ adjustBrightness() - Parallel array processing
 - ✅ adjustContrast() - Parallel array processing
@@ -117,12 +128,14 @@ All documentation files have been created and pushed to **both branches**:
 - ✅ gammaCorrection() - Parallel LUT application
 
 **Filters** (4 functions):
+
 - ✅ boxBlur() - Parallel convolution
 - ✅ gaussianBlur() - Parallel convolution
 - ✅ medianFilter() - Parallel median computation
 - ✅ bilateralFilter() - Parallel edge-preserving filter
 
 **Edge Detection** (9 functions):
+
 - ✅ sobelX() - Parallel gradient
 - ✅ sobelY() - Parallel gradient
 - ✅ sobel() - Parallel edge detection
@@ -132,6 +145,7 @@ All documentation files have been created and pushed to **both branches**:
 - ✅ laplacian() - Parallel edge detection
 
 **Geometric Transformations** (5 functions):
+
 - ✅ rotate() - Parallel rotation with interpolation
 - ✅ resize() - Parallel scaling with interpolation
 - ✅ translate() - Parallel translation
@@ -139,15 +153,18 @@ All documentation files have been created and pushed to **both branches**:
 - ✅ flipVertical() - Parallel vertical flip
 
 **Morphological Operations** (3 functions):
+
 - ✅ erode() - Parallel erosion
 - ✅ dilate() - Parallel dilation
 - ✅ morphologicalGradient() - Parallel gradient
 
 **Noise Operations** (2 functions):
+
 - ✅ gaussian() - Parallel with thread-safe RNG
 - ✅ speckle() - Parallel with thread-safe RNG
 
 **Color Operations** (6 functions):
+
 - ✅ splitChannels() - Parallel channel extraction
 - ✅ mergeChannels() - Parallel channel combination
 - ✅ rgbToHsv() - Parallel color space conversion
@@ -173,6 +190,7 @@ All documentation files have been created and pushed to **both branches**:
 #### Current Commits:
 
 **Main Branch**:
+
 ```
 6893b29 - Add quick start guide for easy reference
 8a78487 - Add comprehensive project documentation and guides
@@ -181,6 +199,7 @@ All documentation files have been created and pushed to **both branches**:
 ```
 
 **OpenMP Branch**:
+
 ```
 4fd79a5 - Add quick start guide for easy reference
 ee5d881 - Add comprehensive README with full project guide and documentation
@@ -192,6 +211,7 @@ ca49695 - Add OpenMP parallelization to image processing operations
 ```
 
 #### Remote Synchronization:
+
 - ✅ Main branch pushed to origin/main
 - ✅ OpenMP branch pushed to origin/openmp
 - ✅ All documentation synchronized across both branches
@@ -201,18 +221,18 @@ ca49695 - Add OpenMP parallelization to image processing operations
 
 ## 📊 Project Statistics
 
-| Metric | Count |
-|--------|-------|
-| **Total Branches** | 2 (main, openmp) |
-| **Documentation Files** | 4 (README, OPENMP_IMPLEMENTATION, BRANCH_COMPARISON, QUICK_START) |
-| **Documentation Lines** | ~2,000+ |
-| **Source Files** | 9 (.cpp files) |
-| **Header Files** | 8 (.h files) |
-| **Operations Implemented** | 40+ |
-| **Parallelized Functions** | 38+ |
-| **Supported Image Formats** | 4 (JPG, PNG, BMP, TGA) |
-| **Expected Speedup** | 2-8x on multi-core systems |
-| **Lines of Code** | ~2,500+ |
+| Metric                      | Count                                                             |
+| --------------------------- | ----------------------------------------------------------------- |
+| **Total Branches**          | 2 (main, openmp)                                                  |
+| **Documentation Files**     | 4 (README, OPENMP_IMPLEMENTATION, BRANCH_COMPARISON, QUICK_START) |
+| **Documentation Lines**     | ~2,000+                                                           |
+| **Source Files**            | 9 (.cpp files)                                                    |
+| **Header Files**            | 8 (.h files)                                                      |
+| **Operations Implemented**  | 40+                                                               |
+| **Parallelized Functions**  | 38+                                                               |
+| **Supported Image Formats** | 4 (JPG, PNG, BMP, TGA)                                            |
+| **Expected Speedup**        | 2-8x on multi-core systems                                        |
+| **Lines of Code**           | ~2,500+                                                           |
 
 ---
 
@@ -221,30 +241,34 @@ ca49695 - Add OpenMP parallelization to image processing operations
 ### For Anyone Viewing on GitHub:
 
 1. **Visit Repository**:
+
    ```
    https://github.com/Marwan911e/HighPerformanceImageProcessing
    ```
 
 2. **Choose Branch**:
+
    - Click "main" dropdown
    - Select "main" for serial version
    - Select "openmp" for parallel version
 
 3. **Read Documentation**:
-   - Start with README.md
-   - For OpenMP details, see OPENMP_IMPLEMENTATION.md
-   - For quick reference, see QUICK_START.md
-   - For branch comparison, see BRANCH_COMPARISON.md
+
+   - Start with [README.md](../README.md)
+   - For OpenMP details, see [OPENMP_IMPLEMENTATION.md](OPENMP_IMPLEMENTATION.md)
+   - For quick reference, see [QUICK_START.md](QUICK_START.md)
+   - For branch comparison, see [BRANCH_COMPARISON.md](BRANCH_COMPARISON.md)
 
 4. **Clone and Build**:
+
    ```bash
    git clone https://github.com/Marwan911e/HighPerformanceImageProcessing.git
    cd HighPerformanceImageProcessing
-   
+
    # Serial version
    git checkout main
    make
-   
+
    # OR OpenMP version
    git checkout openmp
    make
@@ -253,21 +277,23 @@ ca49695 - Add OpenMP parallelization to image processing operations
 ### For You (Project Owner):
 
 1. **Local Repository**:
+
    - Your local repo at: `C:\Users\Marwa\Documents\College\term-7\hpc-lecture\hpc2final\hpc2final`
    - Both branches are synchronized with GitHub
 
 2. **Making Changes**:
+
    ```bash
    # Switch to branch
    git checkout openmp  # or main
-   
+
    # Make changes to files
    # ... edit code ...
-   
+
    # Commit changes
    git add .
    git commit -m "Description of changes"
-   
+
    # Push to GitHub
    git push origin openmp  # or main
    ```
@@ -306,6 +332,7 @@ ca49695 - Add OpenMP parallelization to image processing operations
 ## 📱 Sharing Your Project
 
 ### On Resume/CV:
+
 ```
 High Performance Image Processing Library
 - Implemented 40+ image processing operations in C++17
@@ -315,11 +342,12 @@ High Performance Image Processing Library
 ```
 
 ### On LinkedIn:
-```
-Excited to share my latest project: A high-performance image processing 
-library with OpenMP parallelization achieving up to 8x speedup! 
 
-Features 40+ operations including edge detection, filters, morphological 
+```
+Excited to share my latest project: A high-performance image processing
+library with OpenMP parallelization achieving up to 8x speedup!
+
+Features 40+ operations including edge detection, filters, morphological
 operations, and more. Fully documented and open source.
 
 Check it out: https://github.com/Marwan911e/HighPerformanceImageProcessing
@@ -328,6 +356,7 @@ Check it out: https://github.com/Marwan911e/HighPerformanceImageProcessing
 ```
 
 ### In Academic Papers:
+
 ```
 The implementation is available as open source at:
 https://github.com/Marwan911e/HighPerformanceImageProcessing
@@ -361,6 +390,7 @@ https://github.com/Marwan911e/HighPerformanceImageProcessing
 ## 🎉 Congratulations!
 
 Your project is now:
+
 - ✅ **Complete** with all features implemented
 - ✅ **Documented** comprehensively with 4 guide files
 - ✅ **Pushed** to GitHub on both branches
@@ -393,4 +423,3 @@ Your project is now:
 ---
 
 **Congratulations on completing your High Performance Image Processing project! 🎉🚀**
-

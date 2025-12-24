@@ -182,7 +182,7 @@ Potential additional branches:
 
 ## Questions?
 
-See `OPENMP_IMPLEMENTATION.md` for detailed OpenMP documentation.
+See [OPENMP_IMPLEMENTATION.md](OPENMP_IMPLEMENTATION.md) for detailed OpenMP documentation.
 
 ## Summary
 

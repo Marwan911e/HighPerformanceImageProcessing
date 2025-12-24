@@ -164,7 +164,7 @@ git checkout openmp
 | **Complexity** | Simple | Moderate |
 | **Requires** | C++17 compiler | C++17 + OpenMP support |
 
-**Detailed Comparison**: See [BRANCH_COMPARISON.md](BRANCH_COMPARISON.md)
+**Detailed Comparison**: See [BRANCH_COMPARISON.md](docs/BRANCH_COMPARISON.md)
 
 ---
 
@@ -671,9 +671,11 @@ Adjusts R, G, B channels independently:
 ### Core Documentation Files
 
 1. **README.md** (this file) - Complete project guide
-2. **[OPENMP_IMPLEMENTATION.md](OPENMP_IMPLEMENTATION.md)** - Detailed OpenMP parallelization guide
-3. **[BRANCH_COMPARISON.md](BRANCH_COMPARISON.md)** - Serial vs OpenMP comparison
-4. **[USAGE_GUIDE.md](USAGE_GUIDE.md)** - Detailed usage instructions
+2. **[OPENMP_IMPLEMENTATION.md](docs/OPENMP_IMPLEMENTATION.md)** - Detailed OpenMP parallelization guide
+3. **[BRANCH_COMPARISON.md](docs/BRANCH_COMPARISON.md)** - Serial vs OpenMP comparison
+4. **[QUICK_START.md](docs/QUICK_START.md)** - Quick reference guide
+5. **[PROJECT_SUMMARY.md](docs/PROJECT_SUMMARY.md)** - Project completion summary
+6. **[USAGE_GUIDE.md](docs/USAGE_GUIDE.md)** - Detailed usage instructions
 
 ### Code Documentation
 
@@ -859,9 +861,13 @@ HighPerformanceImageProcessing/
 ├── CMakeLists.txt            # CMake configuration
 ├── Makefile                  # Makefile for building
 ├── README.md                 # This file
-├── OPENMP_IMPLEMENTATION.md  # OpenMP documentation
-├── BRANCH_COMPARISON.md      # Branch comparison
-├── USAGE_GUIDE.md           # Usage documentation
+├── docs/                     # Documentation files
+│   ├── OPENMP_IMPLEMENTATION.md  # OpenMP documentation
+│   ├── BRANCH_COMPARISON.md      # Branch comparison
+│   ├── QUICK_START.md            # Quick start guide
+│   ├── PROJECT_SUMMARY.md        # Project summary
+│   ├── USAGE_GUIDE.md           # Usage documentation
+│   └── DOWNLOAD_LIBS.md          # Library download guide
 └── LICENSE                   # MIT License
 ```
 
@@ -981,7 +987,7 @@ SOFTWARE.
 
 ### ⭐ Star this repository if you find it helpful!
 
-**[Report Bug](https://github.com/Marwan911e/HighPerformanceImageProcessing/issues)** • **[Request Feature](https://github.com/Marwan911e/HighPerformanceImageProcessing/issues)** • **[Documentation](OPENMP_IMPLEMENTATION.md)**
+**[Report Bug](https://github.com/Marwan911e/HighPerformanceImageProcessing/issues)** • **[Request Feature](https://github.com/Marwan911e/HighPerformanceImageProcessing/issues)** • **[Documentation](docs/OPENMP_IMPLEMENTATION.md)**
 
 Made with ❤️ for High Performance Computing
 
