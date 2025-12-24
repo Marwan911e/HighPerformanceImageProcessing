@@ -305,12 +305,21 @@ int main(int argc, char** argv) {
                     break;
                 }
                 
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 // Process local chunk
                 localChunk = PointOpsMPI::grayscale(localChunk, rank, size);
                 
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 if (rank == 0) {
                     appliedOperations.push_back("grayscale");
-                    std::cout << "✓ Converted to grayscale. (Image in memory - use option 2 to save)\n";
+                    std::cout << "✓ Converted to grayscale in " << std::fixed 
+                              << std::setprecision(2) << elapsed_ms 
+                              << " ms (MPI, " << size << " processes)\n";
                 }
                 break;
             }
@@ -330,10 +339,20 @@ int main(int argc, char** argv) {
                 MPI_Bcast(&delta, 1, MPI_INT, 0, MPI_COMM_WORLD);
                 
                 if (delta != 0 || localChunk.isValid()) {
+                    // Start timing
+                    double start_time = MPI_Wtime();
+                    
                     localChunk = PointOpsMPI::adjustBrightness(localChunk, delta, rank, size);
+                    
+                    // End timing
+                    double end_time = MPI_Wtime();
+                    double elapsed_ms = (end_time - start_time) * 1000.0;
+                    
                     if (rank == 0) {
                         appliedOperations.push_back("brightness" + std::to_string(delta));
-                        std::cout << "✓ Brightness adjusted. (Image in memory - use option 2 to save)\n";
+                        std::cout << "✓ Brightness adjusted in " << std::fixed 
+                                  << std::setprecision(2) << elapsed_ms 
+                                  << " ms (MPI, " << size << " processes)\n";
                     }
                 }
                 break;
@@ -354,7 +373,15 @@ int main(int argc, char** argv) {
                 MPI_Bcast(&factor, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
                 
                 if (factor != 0.0f || localChunk.isValid()) {
+                    // Start timing
+                    double start_time = MPI_Wtime();
+                    
                     localChunk = PointOpsMPI::adjustContrast(localChunk, factor, rank, size);
+                    
+                    // End timing
+                    double end_time = MPI_Wtime();
+                    double elapsed_ms = (end_time - start_time) * 1000.0;
+                    
                     if (rank == 0) {
                         std::string factorStr = std::to_string(factor);
                         size_t dotPos = factorStr.find(".");
@@ -362,7 +389,9 @@ int main(int argc, char** argv) {
                             factorStr = factorStr.substr(0, dotPos + 2);
                         }
                         appliedOperations.push_back("contrast" + factorStr);
-                        std::cout << "✓ Contrast adjusted. (Image in memory - use option 2 to save)\n";
+                        std::cout << "✓ Contrast adjusted in " << std::fixed 
+                                  << std::setprecision(2) << elapsed_ms 
+                                  << " ms (MPI, " << size << " processes)\n";
                     }
                 }
                 break;
@@ -383,10 +412,20 @@ int main(int argc, char** argv) {
                 MPI_Bcast(&thresh, 1, MPI_INT, 0, MPI_COMM_WORLD);
                 
                 if (thresh >= 0 && localChunk.isValid()) {
+                    // Start timing
+                    double start_time = MPI_Wtime();
+                    
                     localChunk = PointOpsMPI::threshold(localChunk, thresh, rank, size);
+                    
+                    // End timing
+                    double end_time = MPI_Wtime();
+                    double elapsed_ms = (end_time - start_time) * 1000.0;
+                    
                     if (rank == 0) {
                         appliedOperations.push_back("threshold" + std::to_string(thresh));
-                        std::cout << "✓ Threshold applied. (Image in memory - use option 2 to save)\n";
+                        std::cout << "✓ Threshold applied in " << std::fixed 
+                                  << std::setprecision(2) << elapsed_ms 
+                                  << " ms (MPI, " << size << " processes)\n";
                     }
                 }
                 break;
@@ -398,9 +437,19 @@ int main(int argc, char** argv) {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = PointOps::thresholdOtsu(currentImage);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("otsu");
-                std::cout << "✓ Otsu threshold applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Otsu threshold applied in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -417,9 +466,19 @@ int main(int argc, char** argv) {
                     std::cout << "⚠ Warning: Block size must be odd and >= 3. Using 11 instead.\n";
                     blockSize = 11;
                 }
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = PointOps::adaptiveThreshold(currentImage, blockSize, 2, true);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("adaptthresh" + std::to_string(blockSize));
-                std::cout << "✓ Adaptive threshold applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Adaptive threshold applied in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -432,11 +491,20 @@ int main(int argc, char** argv) {
                     break;
                 }
                 
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 localChunk = PointOpsMPI::invert(localChunk, rank, size);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
                 
                 if (rank == 0) {
                     appliedOperations.push_back("invert");
-                    std::cout << "✓ Image inverted. (Image in memory - use option 2 to save)\n";
+                    std::cout << "✓ Image inverted in " << std::fixed 
+                              << std::setprecision(2) << elapsed_ms 
+                              << " ms (MPI, " << size << " processes)\n";
                 }
                 break;
             }
@@ -450,14 +518,24 @@ int main(int argc, char** argv) {
                 float gamma;
                 std::cout << "Enter gamma value (e.g., 0.5, 1.0, 2.2): ";
                 std::cin >> gamma;
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = PointOps::gammaCorrection(currentImage, gamma);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 std::string gammaStr = std::to_string(gamma);
                 size_t dotPos = gammaStr.find(".");
                 if (dotPos != std::string::npos) {
                     gammaStr = gammaStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("gamma" + gammaStr);
-                std::cout << "✓ Gamma correction applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Gamma correction applied in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -470,14 +548,24 @@ int main(int argc, char** argv) {
                 float amount;
                 std::cout << "Enter noise amount (0.0 to 1.0): ";
                 std::cin >> amount;
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = Noise::saltAndPepper(currentImage, amount);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 std::string amountStr = std::to_string(amount);
                 size_t dotPos = amountStr.find(".");
                 if (dotPos != std::string::npos) {
                     amountStr = amountStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("saltpepper" + amountStr);
-                std::cout << "✓ Salt & pepper noise added. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Salt & pepper noise added in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -492,9 +580,19 @@ int main(int argc, char** argv) {
                 std::cin >> mean;
                 std::cout << "Enter standard deviation (e.g., 25): ";
                 std::cin >> stddev;
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = Noise::gaussian(currentImage, mean, stddev);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("gaussnoise" + std::to_string((int)stddev));
-                std::cout << "✓ Gaussian noise added. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Gaussian noise added in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -507,14 +605,24 @@ int main(int argc, char** argv) {
                 float variance;
                 std::cout << "Enter variance (e.g., 0.1): ";
                 std::cin >> variance;
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = Noise::speckle(currentImage, variance);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 std::string varStr = std::to_string(variance);
                 size_t dotPos = varStr.find(".");
                 if (dotPos != std::string::npos) {
                     varStr = varStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("speckle" + varStr);
-                std::cout << "✓ Speckle noise added. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Speckle noise added in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -531,9 +639,19 @@ int main(int argc, char** argv) {
                     std::cout << "⚠ Warning: Kernel size must be odd and >= 3. Using 5 instead.\n";
                     size = 5;
                 }
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = Filters::boxBlur(currentImage, size);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("boxblur" + std::to_string(size));
-                std::cout << "✓ Box blur applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Box blur applied in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -553,14 +671,24 @@ int main(int argc, char** argv) {
                 }
                 std::cout << "Enter sigma (e.g., 1.4): ";
                 std::cin >> sigma;
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = Filters::gaussianBlur(currentImage, size, sigma);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 std::string sigmaStr = std::to_string(sigma);
                 size_t dotPos = sigmaStr.find(".");
                 if (dotPos != std::string::npos) {
                     sigmaStr = sigmaStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("gaussblur" + std::to_string(size) + "s" + sigmaStr);
-                std::cout << "✓ Gaussian blur applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Gaussian blur applied in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -577,9 +705,19 @@ int main(int argc, char** argv) {
                     std::cout << "⚠ Warning: Kernel size must be odd and >= 3. Using 5 instead.\n";
                     size = 5;
                 }
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = Filters::medianFilter(currentImage, size);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("median" + std::to_string(size));
-                std::cout << "✓ Median filter applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Median filter applied in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -597,9 +735,19 @@ int main(int argc, char** argv) {
                 std::cin >> sigmaColor;
                 std::cout << "Enter sigma space (e.g., 75): ";
                 std::cin >> sigmaSpace;
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = Filters::bilateralFilter(currentImage, diameter, sigmaColor, sigmaSpace);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("bilateral" + std::to_string(diameter));
-                std::cout << "✓ Bilateral filter applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Bilateral filter applied in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -609,9 +757,19 @@ int main(int argc, char** argv) {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = EdgeDetection::sobel(currentImage);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("sobel");
-                std::cout << "✓ Sobel edge detection applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Sobel edge detection applied in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -626,9 +784,19 @@ int main(int argc, char** argv) {
                 std::cin >> low;
                 std::cout << "Enter high threshold (e.g., 150): ";
                 std::cin >> high;
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = EdgeDetection::canny(currentImage, low, high);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("canny" + std::to_string((int)low) + "x" + std::to_string((int)high));
-                std::cout << "✓ Canny edge detection applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Canny edge detection applied in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -638,9 +806,19 @@ int main(int argc, char** argv) {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = EdgeDetection::sharpen(currentImage);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("sharpen");
-                std::cout << "✓ Sharpen filter applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Sharpen filter applied in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -650,9 +828,19 @@ int main(int argc, char** argv) {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = EdgeDetection::prewitt(currentImage);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("prewitt");
-                std::cout << "✓ Prewitt edge detection applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Prewitt edge detection applied in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -662,9 +850,19 @@ int main(int argc, char** argv) {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = EdgeDetection::laplacian(currentImage);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("laplacian");
-                std::cout << "✓ Laplacian edge detection applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Laplacian edge detection applied in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -686,25 +884,35 @@ int main(int argc, char** argv) {
                 }
                 auto kernel = Morphological::getStructuringElement(Morphological::StructuringElement::RECTANGLE, size);
                 
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 std::string opName;
                 if (choice == 50) {
                     currentImage = Morphological::erode(currentImage, kernel);
                     opName = "erode" + std::to_string(size);
-                    std::cout << "✓ Erosion applied. (Image in memory - use option 2 to save)\n";
                 } else if (choice == 51) {
                     currentImage = Morphological::dilate(currentImage, kernel);
                     opName = "dilate" + std::to_string(size);
-                    std::cout << "✓ Dilation applied. (Image in memory - use option 2 to save)\n";
                 } else if (choice == 52) {
                     currentImage = Morphological::opening(currentImage, kernel);
                     opName = "open" + std::to_string(size);
-                    std::cout << "✓ Opening applied. (Image in memory - use option 2 to save)\n";
                 } else {
                     currentImage = Morphological::closing(currentImage, kernel);
                     opName = "close" + std::to_string(size);
-                    std::cout << "✓ Closing applied. (Image in memory - use option 2 to save)\n";
                 }
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back(opName);
+                std::string opDesc = (choice == 50) ? "Erosion" : 
+                                     (choice == 51) ? "Dilation" : 
+                                     (choice == 52) ? "Opening" : "Closing";
+                std::cout << "✓ " << opDesc << " applied in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -722,9 +930,19 @@ int main(int argc, char** argv) {
                     size = 5;
                 }
                 auto kernel = Morphological::getStructuringElement(Morphological::StructuringElement::RECTANGLE, size);
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = Morphological::morphologicalGradient(currentImage, kernel);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("morphgrad" + std::to_string(size));
-                std::cout << "✓ Morphological gradient applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Morphological gradient applied in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -737,9 +955,19 @@ int main(int argc, char** argv) {
                 double angle;
                 std::cout << "Enter rotation angle in degrees: ";
                 std::cin >> angle;
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = Geometric::rotate(currentImage, angle);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("rotate" + std::to_string((int)angle));
-                std::cout << "✓ Image rotated. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Image rotated in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -754,9 +982,19 @@ int main(int argc, char** argv) {
                 std::cin >> width;
                 std::cout << "Enter new height: ";
                 std::cin >> height;
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = Geometric::resize(currentImage, width, height);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("resize" + std::to_string(width) + "x" + std::to_string(height));
-                std::cout << "✓ Image resized. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Image resized in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -771,9 +1009,19 @@ int main(int argc, char** argv) {
                 std::cin >> dx;
                 std::cout << "Enter vertical translation (pixels): ";
                 std::cin >> dy;
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = Geometric::translate(currentImage, dx, dy);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("translate" + std::to_string(dx) + "x" + std::to_string(dy));
-                std::cout << "✓ Image translated. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Image translated in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -783,9 +1031,19 @@ int main(int argc, char** argv) {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = Geometric::flipHorizontal(currentImage);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("fliph");
-                std::cout << "✓ Image flipped horizontally. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Image flipped horizontally in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -795,9 +1053,19 @@ int main(int argc, char** argv) {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = Geometric::flipVertical(currentImage);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("flipv");
-                std::cout << "✓ Image flipped vertically. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Image flipped vertically in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -807,8 +1075,18 @@ int main(int argc, char** argv) {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 auto channels = ColorOps::splitChannels(currentImage);
-                std::cout << "✓ Channels split. Saving...\n";
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
+                std::cout << "✓ Channels split in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes). Saving...\n";
                 for (size_t i = 0; i < channels.size(); ++i) {
                     std::string baseName = getBaseName(fs::path(currentFilename).filename().string());
                     std::string fname = outputFolder + "/" + baseName + "_channel_" + std::to_string(i) + ".png";
@@ -824,9 +1102,19 @@ int main(int argc, char** argv) {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = ColorOps::rgbToHsv(currentImage);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("hsv");
-                std::cout << "✓ Converted to HSV. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Converted to HSV in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -839,9 +1127,19 @@ int main(int argc, char** argv) {
                 float delta;
                 std::cout << "Enter hue delta (-180 to 180): ";
                 std::cin >> delta;
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = ColorOps::adjustHue(currentImage, delta);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 appliedOperations.push_back("hue" + std::to_string((int)delta));
-                std::cout << "✓ Hue adjusted. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Hue adjusted in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -854,14 +1152,24 @@ int main(int argc, char** argv) {
                 float factor;
                 std::cout << "Enter saturation factor (0.0 to 2.0): ";
                 std::cin >> factor;
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = ColorOps::adjustSaturation(currentImage, factor);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
                 if (dotPos != std::string::npos) {
                     factorStr = factorStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("sat" + factorStr);
-                std::cout << "✓ Saturation adjusted. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Saturation adjusted in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -874,14 +1182,24 @@ int main(int argc, char** argv) {
                 float factor;
                 std::cout << "Enter value factor (0.0 to 2.0): ";
                 std::cin >> factor;
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = ColorOps::adjustValue(currentImage, factor);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
                 if (dotPos != std::string::npos) {
                     factorStr = factorStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("val" + factorStr);
-                std::cout << "✓ Value adjusted. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Value adjusted in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -898,7 +1216,15 @@ int main(int argc, char** argv) {
                 std::cin >> g;
                 std::cout << "Enter blue factor (0.0 to 2.0): ";
                 std::cin >> b;
+                // Start timing
+                double start_time = MPI_Wtime();
+                
                 currentImage = ColorOps::colorBalance(currentImage, r, g, b);
+                
+                // End timing
+                double end_time = MPI_Wtime();
+                double elapsed_ms = (end_time - start_time) * 1000.0;
+                
                 std::string rStr = std::to_string(r);
                 std::string gStr = std::to_string(g);
                 std::string bStr = std::to_string(b);
@@ -909,7 +1235,9 @@ int main(int argc, char** argv) {
                 dotPos = bStr.find(".");
                 if (dotPos != std::string::npos) bStr = bStr.substr(0, dotPos + 1);
                 appliedOperations.push_back("colbal" + rStr + "x" + gStr + "x" + bStr);
-                std::cout << "✓ Color balance adjusted. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Color balance adjusted in " << std::fixed 
+                          << std::setprecision(2) << elapsed_ms 
+                          << " ms (MPI, " << size << " processes)\n";
                 break;
             }
             
