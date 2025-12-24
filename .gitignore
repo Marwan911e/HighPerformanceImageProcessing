@@ -42,6 +42,20 @@ output.jpg
 output.png
 test_output.*
 
+# Root-level build artifacts (should be in build/)
+/app.exe
+/image_processor
+/image_processor.exe
+/test.exe
+/image.o
+
+# Test output images (keep original test images)
+tests/*.jpg
+tests/*.png
+tests/*.bmp
+!tests/test.jpg
+!tests/test-kernel.jpg
+
 # Temporary files
 *.tmp
 *.temp

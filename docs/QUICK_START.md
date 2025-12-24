@@ -141,9 +141,9 @@ git pull origin openmp
 
 | File | Description |
 |------|-------------|
-| **README.md** | Complete project documentation |
-| **OPENMP_IMPLEMENTATION.md** | OpenMP parallelization details |
-| **BRANCH_COMPARISON.md** | Serial vs OpenMP comparison |
+| **README.md** | [Complete project documentation](../README.md) |
+| **OPENMP_IMPLEMENTATION.md** | [OpenMP parallelization details](OPENMP_IMPLEMENTATION.md) |
+| **BRANCH_COMPARISON.md** | [Serial vs OpenMP comparison](BRANCH_COMPARISON.md) |
 | **QUICK_START.md** | This file - quick reference |
 
 ---
@@ -254,9 +254,9 @@ After building, verify everything works:
 
 ## 📞 Need More Help?
 
-- **Full Documentation**: See `README.md`
-- **OpenMP Details**: See `OPENMP_IMPLEMENTATION.md`
-- **Performance Comparison**: See `BRANCH_COMPARISON.md`
+- **Full Documentation**: See [README.md](../README.md)
+- **OpenMP Details**: See [OPENMP_IMPLEMENTATION.md](OPENMP_IMPLEMENTATION.md)
+- **Performance Comparison**: See [BRANCH_COMPARISON.md](BRANCH_COMPARISON.md)
 - **GitHub Issues**: Report problems or ask questions
 
 ---

@@ -231,10 +231,10 @@ ca49695 - Add OpenMP parallelization to image processing operations
    - Select "openmp" for parallel version
 
 3. **Read Documentation**:
-   - Start with README.md
-   - For OpenMP details, see OPENMP_IMPLEMENTATION.md
-   - For quick reference, see QUICK_START.md
-   - For branch comparison, see BRANCH_COMPARISON.md
+   - Start with [README.md](../README.md)
+   - For OpenMP details, see [OPENMP_IMPLEMENTATION.md](OPENMP_IMPLEMENTATION.md)
+   - For quick reference, see [QUICK_START.md](QUICK_START.md)
+   - For branch comparison, see [BRANCH_COMPARISON.md](BRANCH_COMPARISON.md)
 
 4. **Clone and Build**:
    ```bash
