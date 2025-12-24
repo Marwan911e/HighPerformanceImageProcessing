@@ -49,24 +49,12 @@ std::string getExtension(const std::string& filename) {
     return p.extension().string();
 }
 
-// Auto-save function
-void autoSave(const Image& img, const std::string& inputPath, 
-              const std::string& operationName, const std::string& outputFolder) {
-    std::string baseName = getBaseName(fs::path(inputPath).filename().string());
-    std::string ext = getExtension(fs::path(inputPath).filename().string());
-    std::string outputPath = outputFolder + "/" + baseName + "_" + operationName + ext;
-    
-    if (img.save(outputPath)) {
-        std::cout << "✓ Saved to: " << outputPath << "\n";
-    } else {
-        std::cout << "✗ Error: Failed to save image.\n";
-    }
-}
+// Note: autoSave function removed - operations now stay in memory until user saves (option 2)
 
 void displayMenu() {
     std::cout << "\n=== IMAGE PROCESSING OPERATIONS ===\n";
     std::cout << "1.  Select Image from Input Folder\n";
-    std::cout << "2.  Save Current Image (Manual)\n";
+    std::cout << "2.  Save Current Image\n";
     std::cout << "\nPoint Operations:\n";
     std::cout << "10. Grayscale Conversion\n";
     std::cout << "11. Adjust Brightness\n";
@@ -122,17 +110,19 @@ int main() {
     std::string currentExtension;
     std::string inputFolder = "input";
     std::string outputFolder = "output";
+    std::vector<std::string> appliedOperations;  // Track operations for filename generation
     
     // Create folders if they don't exist
     fs::create_directories(inputFolder);
     fs::create_directories(outputFolder);
     
     std::cout << "========================================\n";
-    std::cout << "  IMAGE PROCESSING APPLICATION (OpenMP)\n";
+    std::cout << "  IMAGE PROCESSING APPLICATION (SERIAL)\n";
     std::cout << "========================================\n";
     std::cout << "\n📁 Input folder: " << inputFolder << "/\n";
     std::cout << "📁 Output folder: " << outputFolder << "/\n";
     std::cout << "Supported formats: JPG, PNG, BMP, TGA\n";
+    std::cout << "\n💡 Tip: Apply multiple operations, then save once (option 2)\n";
     
     while (true) {
         displayMenu();
@@ -184,6 +174,7 @@ int main() {
                     if (currentImage.load(currentFilename)) {
                         currentBaseName = getBaseName(images[imgChoice - 1]);
                         currentExtension = getExtension(images[imgChoice - 1]);
+                        appliedOperations.clear(); // Reset operations when loading new image
                         std::cout << "\n✓ Image loaded: " << images[imgChoice - 1] << "\n";
                         std::cout << "  Dimensions: " << currentImage.getWidth() 
                                   << "x" << currentImage.getHeight();
@@ -198,16 +189,55 @@ int main() {
             }
             
             case 2: {
-                // Manual save option
+                // Save with smart filename generation
                 if (!currentImage.isValid()) {
                     std::cout << "✗ Error: No image loaded.\n";
                     break;
                 }
+                
                 std::string filename;
-                std::cout << "Enter output filename (with extension): ";
-                std::cin >> filename;
+                
+                if (appliedOperations.empty()) {
+                    // No operations applied, ask for custom name
+                    std::cout << "Enter output filename (with extension): ";
+                    std::cin >> filename;
+                } else {
+                    // Generate filename from operations
+                    std::string baseName = getBaseName(fs::path(currentFilename).filename().string());
+                    std::string ext = getExtension(fs::path(currentFilename).filename().string());
+                    filename = outputFolder + "/" + baseName;
+                    
+                    // Add all operation names
+                    for (const auto& op : appliedOperations) {
+                        filename += "_" + op;
+                    }
+                    filename += ext;
+                    
+                    std::cout << "\n📝 Auto-generated filename: " << filename << "\n";
+                    std::cout << "   Applied operations: ";
+                    for (size_t i = 0; i < appliedOperations.size(); ++i) {
+                        std::cout << appliedOperations[i];
+                        if (i < appliedOperations.size() - 1) std::cout << " → ";
+                    }
+                    std::cout << "\n";
+                    std::cout << "Use this name? (y/n, or enter 'c' for custom): ";
+                    char choice;
+                    std::cin >> choice;
+                    if (choice != 'y' && choice != 'Y') {
+                        if (choice == 'c' || choice == 'C') {
+                            std::cout << "Enter custom filename: ";
+                            std::cin >> filename;
+                        } else {
+                            // User entered 'n', ask for custom name
+                            std::cout << "Enter custom filename: ";
+                            std::cin >> filename;
+                        }
+                    }
+                }
+                
                 if (currentImage.save(filename)) {
-                    std::cout << "✓ Image saved successfully!\n";
+                    std::cout << "✓ Image saved successfully to: " << filename << "\n";
+                    appliedOperations.clear(); // Reset after successful save
                 } else {
                     std::cout << "✗ Error: Failed to save image.\n";
                 }
@@ -215,19 +245,19 @@ int main() {
             }
             
             case 10: {
-                // Grayscale - with auto-save
+                // Grayscale
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded. Please select an image first (option 1).\n"; 
                     break; 
                 }
                 currentImage = PointOps::grayscale(currentImage);
-                std::cout << "✓ Converted to grayscale.\n";
-                autoSave(currentImage, currentFilename, "grayscale", outputFolder);
+                appliedOperations.push_back("grayscale");
+                std::cout << "✓ Converted to grayscale. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 11: {
-                // Brightness - with auto-save
+                // Brightness
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -236,13 +266,13 @@ int main() {
                 std::cout << "Enter brightness delta (-255 to 255): ";
                 std::cin >> delta;
                 currentImage = PointOps::adjustBrightness(currentImage, delta);
-                std::cout << "✓ Brightness adjusted.\n";
-                autoSave(currentImage, currentFilename, "brightness_" + std::to_string(delta), outputFolder);
+                appliedOperations.push_back("brightness" + std::to_string(delta));
+                std::cout << "✓ Brightness adjusted. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 12: {
-                // Contrast - with auto-save
+                // Contrast
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -251,18 +281,18 @@ int main() {
                 std::cout << "Enter contrast factor (0.0 to 3.0): ";
                 std::cin >> factor;
                 currentImage = PointOps::adjustContrast(currentImage, factor);
-                std::cout << "✓ Contrast adjusted.\n";
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
                 if (dotPos != std::string::npos) {
                     factorStr = factorStr.substr(0, dotPos + 2);
                 }
-                autoSave(currentImage, currentFilename, "contrast_" + factorStr, outputFolder);
+                appliedOperations.push_back("contrast" + factorStr);
+                std::cout << "✓ Contrast adjusted. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 13: {
-                // Manual Threshold - with auto-save
+                // Manual Threshold
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -271,25 +301,25 @@ int main() {
                 std::cout << "Enter threshold value (0-255): ";
                 std::cin >> thresh;
                 currentImage = PointOps::threshold(currentImage, thresh);
-                std::cout << "✓ Threshold applied.\n";
-                autoSave(currentImage, currentFilename, "threshold_" + std::to_string(thresh), outputFolder);
+                appliedOperations.push_back("threshold" + std::to_string(thresh));
+                std::cout << "✓ Threshold applied. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 14: {
-                // Otsu Threshold - with auto-save
+                // Otsu Threshold
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
                 currentImage = PointOps::thresholdOtsu(currentImage);
-                std::cout << "✓ Otsu threshold applied.\n";
-                autoSave(currentImage, currentFilename, "otsu_threshold", outputFolder);
+                appliedOperations.push_back("otsu");
+                std::cout << "✓ Otsu threshold applied. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 15: {
-                // Adaptive Threshold - with auto-save
+                // Adaptive Threshold
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -297,26 +327,30 @@ int main() {
                 int blockSize;
                 std::cout << "Enter block size (odd number, e.g., 11): ";
                 std::cin >> blockSize;
+                if (blockSize < 3 || blockSize % 2 == 0) {
+                    std::cout << "⚠ Warning: Block size must be odd and >= 3. Using 11 instead.\n";
+                    blockSize = 11;
+                }
                 currentImage = PointOps::adaptiveThreshold(currentImage, blockSize, 2, true);
-                std::cout << "✓ Adaptive threshold applied.\n";
-                autoSave(currentImage, currentFilename, "adaptive_threshold_" + std::to_string(blockSize), outputFolder);
+                appliedOperations.push_back("adaptthresh" + std::to_string(blockSize));
+                std::cout << "✓ Adaptive threshold applied. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 16: {
-                // Invert - with auto-save
+                // Invert
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
                 currentImage = PointOps::invert(currentImage);
-                std::cout << "✓ Image inverted.\n";
-                autoSave(currentImage, currentFilename, "inverted", outputFolder);
+                appliedOperations.push_back("invert");
+                std::cout << "✓ Image inverted. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 17: {
-                // Gamma Correction - with auto-save
+                // Gamma Correction
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -325,18 +359,18 @@ int main() {
                 std::cout << "Enter gamma value (e.g., 0.5, 1.0, 2.2): ";
                 std::cin >> gamma;
                 currentImage = PointOps::gammaCorrection(currentImage, gamma);
-                std::cout << "✓ Gamma correction applied.\n";
                 std::string gammaStr = std::to_string(gamma);
                 size_t dotPos = gammaStr.find(".");
                 if (dotPos != std::string::npos) {
                     gammaStr = gammaStr.substr(0, dotPos + 2);
                 }
-                autoSave(currentImage, currentFilename, "gamma_" + gammaStr, outputFolder);
+                appliedOperations.push_back("gamma" + gammaStr);
+                std::cout << "✓ Gamma correction applied. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 20: {
-                // Salt & Pepper - with auto-save
+                // Salt & Pepper
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -345,18 +379,18 @@ int main() {
                 std::cout << "Enter noise amount (0.0 to 1.0): ";
                 std::cin >> amount;
                 currentImage = Noise::saltAndPepper(currentImage, amount);
-                std::cout << "✓ Salt & pepper noise added.\n";
                 std::string amountStr = std::to_string(amount);
                 size_t dotPos = amountStr.find(".");
                 if (dotPos != std::string::npos) {
                     amountStr = amountStr.substr(0, dotPos + 2);
                 }
-                autoSave(currentImage, currentFilename, "saltpepper_" + amountStr, outputFolder);
+                appliedOperations.push_back("saltpepper" + amountStr);
+                std::cout << "✓ Salt & pepper noise added. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 21: {
-                // Gaussian Noise - with auto-save
+                // Gaussian Noise
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -367,13 +401,13 @@ int main() {
                 std::cout << "Enter standard deviation (e.g., 25): ";
                 std::cin >> stddev;
                 currentImage = Noise::gaussian(currentImage, mean, stddev);
-                std::cout << "✓ Gaussian noise added.\n";
-                autoSave(currentImage, currentFilename, "gaussian_noise_" + std::to_string((int)stddev), outputFolder);
+                appliedOperations.push_back("gaussnoise" + std::to_string((int)stddev));
+                std::cout << "✓ Gaussian noise added. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 22: {
-                // Speckle Noise - with auto-save
+                // Speckle Noise
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -382,18 +416,18 @@ int main() {
                 std::cout << "Enter variance (e.g., 0.1): ";
                 std::cin >> variance;
                 currentImage = Noise::speckle(currentImage, variance);
-                std::cout << "✓ Speckle noise added.\n";
                 std::string varStr = std::to_string(variance);
                 size_t dotPos = varStr.find(".");
                 if (dotPos != std::string::npos) {
                     varStr = varStr.substr(0, dotPos + 2);
                 }
-                autoSave(currentImage, currentFilename, "speckle_" + varStr, outputFolder);
+                appliedOperations.push_back("speckle" + varStr);
+                std::cout << "✓ Speckle noise added. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 30: {
-                // Box Blur - with auto-save
+                // Box Blur
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -401,14 +435,18 @@ int main() {
                 int size;
                 std::cout << "Enter kernel size (odd number, e.g., 5): ";
                 std::cin >> size;
+                if (size < 3 || size % 2 == 0) {
+                    std::cout << "⚠ Warning: Kernel size must be odd and >= 3. Using 5 instead.\n";
+                    size = 5;
+                }
                 currentImage = Filters::boxBlur(currentImage, size);
-                std::cout << "✓ Box blur applied.\n";
-                autoSave(currentImage, currentFilename, "boxblur_" + std::to_string(size), outputFolder);
+                appliedOperations.push_back("boxblur" + std::to_string(size));
+                std::cout << "✓ Box blur applied. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 31: {
-                // Gaussian Blur - with auto-save
+                // Gaussian Blur
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -417,21 +455,25 @@ int main() {
                 float sigma;
                 std::cout << "Enter kernel size (odd number, e.g., 5): ";
                 std::cin >> size;
+                if (size < 3 || size % 2 == 0) {
+                    std::cout << "⚠ Warning: Kernel size must be odd and >= 3. Using 5 instead.\n";
+                    size = 5;
+                }
                 std::cout << "Enter sigma (e.g., 1.4): ";
                 std::cin >> sigma;
                 currentImage = Filters::gaussianBlur(currentImage, size, sigma);
-                std::cout << "✓ Gaussian blur applied.\n";
                 std::string sigmaStr = std::to_string(sigma);
                 size_t dotPos = sigmaStr.find(".");
                 if (dotPos != std::string::npos) {
                     sigmaStr = sigmaStr.substr(0, dotPos + 2);
                 }
-                autoSave(currentImage, currentFilename, "gaussianblur_" + std::to_string(size) + "_" + sigmaStr, outputFolder);
+                appliedOperations.push_back("gaussblur" + std::to_string(size) + "s" + sigmaStr);
+                std::cout << "✓ Gaussian blur applied. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 32: {
-                // Median Filter - with auto-save
+                // Median Filter
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -439,14 +481,18 @@ int main() {
                 int size;
                 std::cout << "Enter kernel size (odd number, e.g., 5): ";
                 std::cin >> size;
+                if (size < 3 || size % 2 == 0) {
+                    std::cout << "⚠ Warning: Kernel size must be odd and >= 3. Using 5 instead.\n";
+                    size = 5;
+                }
                 currentImage = Filters::medianFilter(currentImage, size);
-                std::cout << "✓ Median filter applied.\n";
-                autoSave(currentImage, currentFilename, "median_" + std::to_string(size), outputFolder);
+                appliedOperations.push_back("median" + std::to_string(size));
+                std::cout << "✓ Median filter applied. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 33: {
-                // Bilateral Filter - with auto-save
+                // Bilateral Filter
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -460,25 +506,25 @@ int main() {
                 std::cout << "Enter sigma space (e.g., 75): ";
                 std::cin >> sigmaSpace;
                 currentImage = Filters::bilateralFilter(currentImage, diameter, sigmaColor, sigmaSpace);
-                std::cout << "✓ Bilateral filter applied.\n";
-                autoSave(currentImage, currentFilename, "bilateral_" + std::to_string(diameter), outputFolder);
+                appliedOperations.push_back("bilateral" + std::to_string(diameter));
+                std::cout << "✓ Bilateral filter applied. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 40: {
-                // Sobel - with auto-save
+                // Sobel
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
                 currentImage = EdgeDetection::sobel(currentImage);
-                std::cout << "✓ Sobel edge detection applied.\n";
-                autoSave(currentImage, currentFilename, "sobel", outputFolder);
+                appliedOperations.push_back("sobel");
+                std::cout << "✓ Sobel edge detection applied. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 41: {
-                // Canny - with auto-save
+                // Canny
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -489,44 +535,44 @@ int main() {
                 std::cout << "Enter high threshold (e.g., 150): ";
                 std::cin >> high;
                 currentImage = EdgeDetection::canny(currentImage, low, high);
-                std::cout << "✓ Canny edge detection applied.\n";
-                autoSave(currentImage, currentFilename, "canny_" + std::to_string((int)low) + "_" + std::to_string((int)high), outputFolder);
+                appliedOperations.push_back("canny" + std::to_string((int)low) + "x" + std::to_string((int)high));
+                std::cout << "✓ Canny edge detection applied. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 42: {
-                // Sharpen - with auto-save
+                // Sharpen
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
                 currentImage = EdgeDetection::sharpen(currentImage);
-                std::cout << "✓ Sharpen filter applied.\n";
-                autoSave(currentImage, currentFilename, "sharpen", outputFolder);
+                appliedOperations.push_back("sharpen");
+                std::cout << "✓ Sharpen filter applied. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 43: {
-                // Prewitt - with auto-save
+                // Prewitt
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
                 currentImage = EdgeDetection::prewitt(currentImage);
-                std::cout << "✓ Prewitt edge detection applied.\n";
-                autoSave(currentImage, currentFilename, "prewitt", outputFolder);
+                appliedOperations.push_back("prewitt");
+                std::cout << "✓ Prewitt edge detection applied. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 44: {
-                // Laplacian - with auto-save
+                // Laplacian
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
                 currentImage = EdgeDetection::laplacian(currentImage);
-                std::cout << "✓ Laplacian edge detection applied.\n";
-                autoSave(currentImage, currentFilename, "laplacian", outputFolder);
+                appliedOperations.push_back("laplacian");
+                std::cout << "✓ Laplacian edge detection applied. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
@@ -534,7 +580,7 @@ int main() {
             case 51:
             case 52:
             case 53: {
-                // Morphological operations - with auto-save
+                // Morphological operations
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -542,32 +588,36 @@ int main() {
                 int size;
                 std::cout << "Enter structuring element size (odd number, e.g., 5): ";
                 std::cin >> size;
+                if (size < 3 || size % 2 == 0) {
+                    std::cout << "⚠ Warning: Size must be odd and >= 3. Using 5 instead.\n";
+                    size = 5;
+                }
                 auto kernel = Morphological::getStructuringElement(Morphological::StructuringElement::RECTANGLE, size);
                 
                 std::string opName;
                 if (choice == 50) {
                     currentImage = Morphological::erode(currentImage, kernel);
-                    std::cout << "✓ Erosion applied.\n";
-                    opName = "erosion_" + std::to_string(size);
+                    opName = "erode" + std::to_string(size);
+                    std::cout << "✓ Erosion applied. (Image in memory - use option 2 to save)\n";
                 } else if (choice == 51) {
                     currentImage = Morphological::dilate(currentImage, kernel);
-                    std::cout << "✓ Dilation applied.\n";
-                    opName = "dilation_" + std::to_string(size);
+                    opName = "dilate" + std::to_string(size);
+                    std::cout << "✓ Dilation applied. (Image in memory - use option 2 to save)\n";
                 } else if (choice == 52) {
                     currentImage = Morphological::opening(currentImage, kernel);
-                    std::cout << "✓ Opening applied.\n";
-                    opName = "opening_" + std::to_string(size);
+                    opName = "open" + std::to_string(size);
+                    std::cout << "✓ Opening applied. (Image in memory - use option 2 to save)\n";
                 } else {
                     currentImage = Morphological::closing(currentImage, kernel);
-                    std::cout << "✓ Closing applied.\n";
-                    opName = "closing_" + std::to_string(size);
+                    opName = "close" + std::to_string(size);
+                    std::cout << "✓ Closing applied. (Image in memory - use option 2 to save)\n";
                 }
-                autoSave(currentImage, currentFilename, opName, outputFolder);
+                appliedOperations.push_back(opName);
                 break;
             }
             
             case 54: {
-                // Morphological Gradient - with auto-save
+                // Morphological Gradient
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -575,15 +625,19 @@ int main() {
                 int size;
                 std::cout << "Enter structuring element size: ";
                 std::cin >> size;
+                if (size < 3 || size % 2 == 0) {
+                    std::cout << "⚠ Warning: Size must be odd and >= 3. Using 5 instead.\n";
+                    size = 5;
+                }
                 auto kernel = Morphological::getStructuringElement(Morphological::StructuringElement::RECTANGLE, size);
                 currentImage = Morphological::morphologicalGradient(currentImage, kernel);
-                std::cout << "✓ Morphological gradient applied.\n";
-                autoSave(currentImage, currentFilename, "morph_gradient_" + std::to_string(size), outputFolder);
+                appliedOperations.push_back("morphgrad" + std::to_string(size));
+                std::cout << "✓ Morphological gradient applied. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 60: {
-                // Rotate - with auto-save
+                // Rotate
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -592,13 +646,13 @@ int main() {
                 std::cout << "Enter rotation angle in degrees: ";
                 std::cin >> angle;
                 currentImage = Geometric::rotate(currentImage, angle);
-                std::cout << "✓ Image rotated.\n";
-                autoSave(currentImage, currentFilename, "rotate_" + std::to_string((int)angle), outputFolder);
+                appliedOperations.push_back("rotate" + std::to_string((int)angle));
+                std::cout << "✓ Image rotated. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 61: {
-                // Resize - with auto-save
+                // Resize
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -609,13 +663,13 @@ int main() {
                 std::cout << "Enter new height: ";
                 std::cin >> height;
                 currentImage = Geometric::resize(currentImage, width, height);
-                std::cout << "✓ Image resized.\n";
-                autoSave(currentImage, currentFilename, "resize_" + std::to_string(width) + "x" + std::to_string(height), outputFolder);
+                appliedOperations.push_back("resize" + std::to_string(width) + "x" + std::to_string(height));
+                std::cout << "✓ Image resized. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 62: {
-                // Translate - with auto-save
+                // Translate
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -626,45 +680,45 @@ int main() {
                 std::cout << "Enter vertical translation (pixels): ";
                 std::cin >> dy;
                 currentImage = Geometric::translate(currentImage, dx, dy);
-                std::cout << "✓ Image translated.\n";
-                autoSave(currentImage, currentFilename, "translate_" + std::to_string(dx) + "_" + std::to_string(dy), outputFolder);
+                appliedOperations.push_back("translate" + std::to_string(dx) + "x" + std::to_string(dy));
+                std::cout << "✓ Image translated. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 63: {
-                // Flip Horizontal - with auto-save
+                // Flip Horizontal
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
                 currentImage = Geometric::flipHorizontal(currentImage);
-                std::cout << "✓ Image flipped horizontally.\n";
-                autoSave(currentImage, currentFilename, "flip_horizontal", outputFolder);
+                appliedOperations.push_back("fliph");
+                std::cout << "✓ Image flipped horizontally. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 64: {
-                // Flip Vertical - with auto-save
+                // Flip Vertical
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
                 currentImage = Geometric::flipVertical(currentImage);
-                std::cout << "✓ Image flipped vertically.\n";
-                autoSave(currentImage, currentFilename, "flip_vertical", outputFolder);
+                appliedOperations.push_back("flipv");
+                std::cout << "✓ Image flipped vertically. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 70: {
-                // Split Channels - with auto-save
+                // Split Channels (special case - saves multiple files)
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
                 auto channels = ColorOps::splitChannels(currentImage);
                 std::cout << "✓ Channels split. Saving...\n";
-                std::string baseName = getBaseName(currentFilename);
                 for (size_t i = 0; i < channels.size(); ++i) {
+                    std::string baseName = getBaseName(fs::path(currentFilename).filename().string());
                     std::string fname = outputFolder + "/" + baseName + "_channel_" + std::to_string(i) + ".png";
                     channels[i].save(fname);
                     std::cout << "  ✓ Saved " << fname << "\n";
@@ -673,19 +727,19 @@ int main() {
             }
             
             case 71: {
-                // RGB to HSV - with auto-save
+                // RGB to HSV
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
                 currentImage = ColorOps::rgbToHsv(currentImage);
-                std::cout << "✓ Converted to HSV.\n";
-                autoSave(currentImage, currentFilename, "hsv", outputFolder);
+                appliedOperations.push_back("hsv");
+                std::cout << "✓ Converted to HSV. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 72: {
-                // Adjust Hue - with auto-save
+                // Adjust Hue
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -694,13 +748,13 @@ int main() {
                 std::cout << "Enter hue delta (-180 to 180): ";
                 std::cin >> delta;
                 currentImage = ColorOps::adjustHue(currentImage, delta);
-                std::cout << "✓ Hue adjusted.\n";
-                autoSave(currentImage, currentFilename, "hue_" + std::to_string((int)delta), outputFolder);
+                appliedOperations.push_back("hue" + std::to_string((int)delta));
+                std::cout << "✓ Hue adjusted. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 73: {
-                // Adjust Saturation - with auto-save
+                // Adjust Saturation
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -709,18 +763,18 @@ int main() {
                 std::cout << "Enter saturation factor (0.0 to 2.0): ";
                 std::cin >> factor;
                 currentImage = ColorOps::adjustSaturation(currentImage, factor);
-                std::cout << "✓ Saturation adjusted.\n";
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
                 if (dotPos != std::string::npos) {
                     factorStr = factorStr.substr(0, dotPos + 2);
                 }
-                autoSave(currentImage, currentFilename, "saturation_" + factorStr, outputFolder);
+                appliedOperations.push_back("sat" + factorStr);
+                std::cout << "✓ Saturation adjusted. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 74: {
-                // Adjust Value - with auto-save
+                // Adjust Value
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -729,18 +783,18 @@ int main() {
                 std::cout << "Enter value factor (0.0 to 2.0): ";
                 std::cin >> factor;
                 currentImage = ColorOps::adjustValue(currentImage, factor);
-                std::cout << "✓ Value adjusted.\n";
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
                 if (dotPos != std::string::npos) {
                     factorStr = factorStr.substr(0, dotPos + 2);
                 }
-                autoSave(currentImage, currentFilename, "value_" + factorStr, outputFolder);
+                appliedOperations.push_back("val" + factorStr);
+                std::cout << "✓ Value adjusted. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 75: {
-                // Color Balance - with auto-save
+                // Color Balance
                 if (!currentImage.isValid()) { 
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
@@ -753,7 +807,6 @@ int main() {
                 std::cout << "Enter blue factor (0.0 to 2.0): ";
                 std::cin >> b;
                 currentImage = ColorOps::colorBalance(currentImage, r, g, b);
-                std::cout << "✓ Color balance adjusted.\n";
                 std::string rStr = std::to_string(r);
                 std::string gStr = std::to_string(g);
                 std::string bStr = std::to_string(b);
@@ -763,7 +816,8 @@ int main() {
                 if (dotPos != std::string::npos) gStr = gStr.substr(0, dotPos + 1);
                 dotPos = bStr.find(".");
                 if (dotPos != std::string::npos) bStr = bStr.substr(0, dotPos + 1);
-                autoSave(currentImage, currentFilename, "colorbalance_" + rStr + "_" + gStr + "_" + bStr, outputFolder);
+                appliedOperations.push_back("colbal" + rStr + "x" + gStr + "x" + bStr);
+                std::cout << "✓ Color balance adjusted. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
