@@ -4,6 +4,7 @@
 #include <cmath>
 #include <algorithm>
 #include <queue>
+#include <omp.h>
 
 namespace EdgeDetection {
 
@@ -19,6 +20,7 @@ Image sobelX(const Image& img) {
         {-1, 0, 1}
     };
     
+    #pragma omp parallel for collapse(2)
     for (int y = 1; y < gray.getHeight() - 1; ++y) {
         for (int x = 1; x < gray.getWidth() - 1; ++x) {
             float gx = 0;
@@ -50,6 +52,7 @@ Image sobelY(const Image& img) {
         { 1,  2,  1}
     };
     
+    #pragma omp parallel for collapse(2)
     for (int y = 1; y < gray.getHeight() - 1; ++y) {
         for (int x = 1; x < gray.getWidth() - 1; ++x) {
             float gy = 0;
@@ -78,6 +81,7 @@ Image sobel(const Image& img) {
     int kernelX[3][3] = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
     int kernelY[3][3] = {{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};
     
+    #pragma omp parallel for collapse(2)
     for (int y = 1; y < gray.getHeight() - 1; ++y) {
         for (int x = 1; x < gray.getWidth() - 1; ++x) {
             float gx = 0, gy = 0;
@@ -113,6 +117,7 @@ Image canny(const Image& img, double lowThreshold, double highThreshold) {
     int kernelX[3][3] = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
     int kernelY[3][3] = {{-1, -2, -1}, {0, 0, 0}, {1, 2, 1}};
     
+    #pragma omp parallel for collapse(2)
     for (int y = 1; y < blurred.getHeight() - 1; ++y) {
         for (int x = 1; x < blurred.getWidth() - 1; ++x) {
             float gx = 0, gy = 0;
@@ -138,6 +143,7 @@ Image canny(const Image& img, double lowThreshold, double highThreshold) {
     // Step 3: Non-maximum suppression
     Image suppressed(gradMag.getWidth(), gradMag.getHeight(), 1);
     
+    #pragma omp parallel for collapse(2)
     for (int y = 1; y < gradMag.getHeight() - 1; ++y) {
         for (int x = 1; x < gradMag.getWidth() - 1; ++x) {
             const uint8_t* mag = gradMag.getPixel(x, y);
@@ -158,7 +164,7 @@ Image canny(const Image& img, double lowThreshold, double highThreshold) {
                     neighbor1 = *gradMag.getPixel(x, y - 1);
                     neighbor2 = *gradMag.getPixel(x, y + 1);
                     break;
-                case 3: // Diagonal \
+                case 3: // Diagonal backslash
                     neighbor1 = *gradMag.getPixel(x - 1, y - 1);
                     neighbor2 = *gradMag.getPixel(x + 1, y + 1);
                     break;
@@ -172,6 +178,7 @@ Image canny(const Image& img, double lowThreshold, double highThreshold) {
     // Step 4: Double thresholding and edge tracking by hysteresis
     Image result(suppressed.getWidth(), suppressed.getHeight(), 1);
     
+    #pragma omp parallel for collapse(2)
     for (int y = 0; y < suppressed.getHeight(); ++y) {
         for (int x = 0; x < suppressed.getWidth(); ++x) {
             const uint8_t* pixel = suppressed.getPixel(x, y);
@@ -224,6 +231,7 @@ Image sharpen(const Image& img) {
         { 0, -1,  0}
     };
     
+    #pragma omp parallel for collapse(2)
     for (int y = 1; y < img.getHeight() - 1; ++y) {
         for (int x = 1; x < img.getWidth() - 1; ++x) {
             std::vector<float> accum(img.getChannels(), 0.0f);
@@ -257,6 +265,7 @@ Image prewitt(const Image& img) {
     int kernelX[3][3] = {{-1, 0, 1}, {-1, 0, 1}, {-1, 0, 1}};
     int kernelY[3][3] = {{-1, -1, -1}, {0, 0, 0}, {1, 1, 1}};
     
+    #pragma omp parallel for collapse(2)
     for (int y = 1; y < gray.getHeight() - 1; ++y) {
         for (int x = 1; x < gray.getWidth() - 1; ++x) {
             float gx = 0, gy = 0;
@@ -290,6 +299,7 @@ Image laplacian(const Image& img) {
         { 0,  1,  0}
     };
     
+    #pragma omp parallel for collapse(2)
     for (int y = 1; y < gray.getHeight() - 1; ++y) {
         for (int x = 1; x < gray.getWidth() - 1; ++x) {
             float sum = 0;
