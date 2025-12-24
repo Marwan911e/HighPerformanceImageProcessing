@@ -164,7 +164,7 @@ Image canny(const Image& img, double lowThreshold, double highThreshold) {
                     neighbor1 = *gradMag.getPixel(x, y - 1);
                     neighbor2 = *gradMag.getPixel(x, y + 1);
                     break;
-                case 3: // Diagonal \
+                case 3: // Diagonal backslash
                     neighbor1 = *gradMag.getPixel(x - 1, y - 1);
                     neighbor2 = *gradMag.getPixel(x + 1, y + 1);
                     break;

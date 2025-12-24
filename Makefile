@@ -19,8 +19,8 @@ SOURCES = $(SRCDIR)/main.cpp \
 OBJDIR = build
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
-# Target executable
-TARGET = image_processor
+# Target executable (in build directory)
+TARGET = $(OBJDIR)/image_processor
 
 # Default target
 all: $(TARGET)
@@ -30,7 +30,7 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
 # Link
-$(TARGET): $(OBJECTS)
+$(TARGET): $(OBJECTS) | $(OBJDIR)
 	$(CXX) $(OBJECTS) -o $(TARGET) $(LDFLAGS)
 
 # Compile
@@ -39,7 +39,8 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp | $(OBJDIR)
 
 # Clean
 clean:
-	rm -rf $(OBJDIR) $(TARGET)
+	rm -rf $(OBJDIR)
+	rm -f image_processor
 
 # Rebuild
 rebuild: clean all
