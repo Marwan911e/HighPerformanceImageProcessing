@@ -14,6 +14,7 @@
 #include <filesystem>
 #include <vector>
 #include <algorithm>
+#include <cstring>
 #include <mpi.h>
 
 namespace fs = std::filesystem;
