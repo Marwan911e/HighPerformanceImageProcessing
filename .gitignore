@@ -56,6 +56,18 @@ tests/*.bmp
 !tests/test.jpg
 !tests/test-kernel.jpg
 
+# Input/Output folder images (user-generated content)
+input/*.jpg
+input/*.jpeg
+input/*.png
+input/*.bmp
+input/*.tga
+output/*.jpg
+output/*.jpeg
+output/*.png
+output/*.bmp
+output/*.tga
+
 # Temporary files
 *.tmp
 *.temp
@@ -66,4 +78,5 @@ tests/*.bmp
 
 # Response files
 *.rsp
+
 
