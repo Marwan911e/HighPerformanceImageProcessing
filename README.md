@@ -29,7 +29,7 @@ A comprehensive, high-performance image processing library implementing various 
 
 This project implements a feature-rich image processing library in C++ with support for:
 
-- **Multiple parallelization strategies**: Serial (main branch) and OpenMP (openmp branch)
+- **Multiple parallelization strategies**: Serial (main branch), OpenMP (openmp branch), and MPI (mpi branch)
 - **40+ image processing operations** across 7 categories
 - **Multiple image formats**: JPG, PNG, BMP, TGA
 - **Interactive CLI interface** for easy operation
@@ -107,7 +107,7 @@ This project implements a feature-rich image processing library in C++ with supp
 
 ## 🌿 Branch Structure
 
-This repository contains two main branches, each serving different purposes:
+This repository contains three main branches, each serving different purposes:
 
 ### 📍 `main` Branch - Serial Implementation
 
@@ -153,16 +153,42 @@ git checkout main
 git checkout openmp
 ```
 
+### 🌐 `mpi` Branch - Distributed Memory Implementation
+
+**Purpose**: Cluster-scale parallel implementation using MPI
+
+**Characteristics**:
+- Distributed-memory parallelization across multiple nodes
+- Scales to hundreds of processes
+- Best for very large images (>10K x 10K)
+- Cluster/HPC environment optimized
+- Currently supports point operations (grayscale, brightness, contrast, etc.)
+
+**Use Cases**:
+- Cluster computing environments
+- Very large image processing
+- Multi-node systems
+- HPC applications
+- Memory-distributed workloads
+
+```bash
+git checkout mpi
+```
+
+**Note**: See [MPI_IMPLEMENTATION.md](docs/MPI_IMPLEMENTATION.md) for detailed MPI usage guide.
+
 ### Branch Comparison
 
-| Aspect | Main (Serial) | OpenMP (Parallel) |
-|--------|--------------|-------------------|
-| **Execution** | Single-threaded | Multi-threaded |
-| **Performance** | Baseline | 2-8x faster |
-| **Memory Usage** | Low | Medium |
-| **Best For** | Small images, debugging | Large images, production |
-| **Complexity** | Simple | Moderate |
-| **Requires** | C++17 compiler | C++17 + OpenMP support |
+| Aspect | Main (Serial) | OpenMP (Parallel) | MPI (Distributed) |
+|--------|--------------|-------------------|------------------|
+| **Execution** | Single-threaded | Multi-threaded | Multi-process |
+| **Memory Model** | Single process | Shared memory | Distributed memory |
+| **Performance** | Baseline | 2-8x faster | Scales with nodes |
+| **Memory Usage** | Low | Medium | Distributed |
+| **Best For** | Small images, debugging | Large images, production | Very large images, clusters |
+| **Complexity** | Simple | Moderate | High |
+| **Requires** | C++17 compiler | C++17 + OpenMP | C++17 + MPI |
+| **Operations** | All | All | Point ops (expanding) |
 
 **Detailed Comparison**: See [BRANCH_COMPARISON.md](docs/BRANCH_COMPARISON.md)
 
@@ -178,6 +204,11 @@ git checkout openmp
 
 #### For OpenMP Branch:
 - Compiler with OpenMP support (GCC 4.9+, Clang 3.7+, MSVC 2019+)
+
+#### For MPI Branch:
+- MPI implementation (OpenMPI, MPICH, or Intel MPI)
+- `mpic++` compiler wrapper
+- Cluster/HPC environment (recommended)
 
 #### Optional Build Tools:
 - CMake 3.10+ (for CMake build)
