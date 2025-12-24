@@ -1,7 +1,7 @@
 # Makefile for Image Processing Project (OpenMP Version)
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -O2 -fopenmp -I./include -I./lib
-LDFLAGS = -fopenmp 
+LDFLAGS = -fopenmp
 
 # Source files
 SRCDIR = src
@@ -19,8 +19,8 @@ SOURCES = $(SRCDIR)/main.cpp \
 OBJDIR = build
 OBJECTS = $(SOURCES:$(SRCDIR)/%.cpp=$(OBJDIR)/%.o)
 
-# Target executable (in build directory)
-TARGET = $(OBJDIR)/image_processor
+# Target executable (in current directory)
+TARGET = image_processor
 
 # Default target
 all: $(TARGET)

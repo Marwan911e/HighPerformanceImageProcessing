@@ -254,10 +254,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::grayscale(currentImage);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("grayscale");
-                std::cout << "✓ Converted to grayscale in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Converted to grayscale in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -273,10 +274,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::adjustBrightness(currentImage, delta);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("brightness" + std::to_string(delta));
-                std::cout << "✓ Brightness adjusted in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Brightness adjusted in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -292,15 +294,16 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::adjustContrast(currentImage, factor);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
                 if (dotPos != std::string::npos) {
                     factorStr = factorStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("contrast" + factorStr);
-                std::cout << "✓ Contrast adjusted in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Contrast adjusted in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -316,10 +319,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::threshold(currentImage, thresh);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("threshold" + std::to_string(thresh));
-                std::cout << "✓ Threshold applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Threshold applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -332,10 +336,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::thresholdOtsu(currentImage);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("otsu");
-                std::cout << "✓ Otsu threshold applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Otsu threshold applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -355,10 +360,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::adaptiveThreshold(currentImage, blockSize, 2, true);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("adaptthresh" + std::to_string(blockSize));
-                std::cout << "✓ Adaptive threshold applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Adaptive threshold applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -371,10 +377,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::invert(currentImage);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("invert");
-                std::cout << "✓ Image inverted in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Image inverted in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -390,15 +397,16 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::gammaCorrection(currentImage, gamma);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 std::string gammaStr = std::to_string(gamma);
                 size_t dotPos = gammaStr.find(".");
                 if (dotPos != std::string::npos) {
                     gammaStr = gammaStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("gamma" + gammaStr);
-                std::cout << "✓ Gamma correction applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Gamma correction applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -414,15 +422,16 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Noise::saltAndPepper(currentImage, amount);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 std::string amountStr = std::to_string(amount);
                 size_t dotPos = amountStr.find(".");
                 if (dotPos != std::string::npos) {
                     amountStr = amountStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("saltpepper" + amountStr);
-                std::cout << "✓ Salt & pepper noise added in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Salt & pepper noise added in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -440,10 +449,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Noise::gaussian(currentImage, mean, stddev);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("gaussnoise" + std::to_string((int)stddev));
-                std::cout << "✓ Gaussian noise added in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Gaussian noise added in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -459,15 +469,16 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Noise::speckle(currentImage, variance);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 std::string varStr = std::to_string(variance);
                 size_t dotPos = varStr.find(".");
                 if (dotPos != std::string::npos) {
                     varStr = varStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("speckle" + varStr);
-                std::cout << "✓ Speckle noise added in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Speckle noise added in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -487,10 +498,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Filters::boxBlur(currentImage, size);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("boxblur" + std::to_string(size));
-                std::cout << "✓ Box blur applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Box blur applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -513,15 +525,16 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Filters::gaussianBlur(currentImage, size, sigma);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 std::string sigmaStr = std::to_string(sigma);
                 size_t dotPos = sigmaStr.find(".");
                 if (dotPos != std::string::npos) {
                     sigmaStr = sigmaStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("gaussblur" + std::to_string(size) + "s" + sigmaStr);
-                std::cout << "✓ Gaussian blur applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Gaussian blur applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -541,10 +554,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Filters::medianFilter(currentImage, size);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("median" + std::to_string(size));
-                std::cout << "✓ Median filter applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Median filter applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -565,10 +579,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Filters::bilateralFilter(currentImage, diameter, sigmaColor, sigmaSpace);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("bilateral" + std::to_string(diameter));
-                std::cout << "✓ Bilateral filter applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Bilateral filter applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -581,10 +596,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = EdgeDetection::sobel(currentImage);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("sobel");
-                std::cout << "✓ Sobel edge detection applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Sobel edge detection applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -602,10 +618,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = EdgeDetection::canny(currentImage, low, high);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("canny" + std::to_string((int)low) + "x" + std::to_string((int)high));
-                std::cout << "✓ Canny edge detection applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Canny edge detection applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -618,10 +635,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = EdgeDetection::sharpen(currentImage);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("sharpen");
-                std::cout << "✓ Sharpen filter applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Sharpen filter applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -634,10 +652,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = EdgeDetection::prewitt(currentImage);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("prewitt");
-                std::cout << "✓ Prewitt edge detection applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Prewitt edge detection applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -650,10 +669,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = EdgeDetection::laplacian(currentImage);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("laplacian");
-                std::cout << "✓ Laplacian edge detection applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Laplacian edge detection applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -691,13 +711,14 @@ int main() {
                     opName = "close" + std::to_string(size);
                 }
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back(opName);
                 std::string opDesc = (choice == 50) ? "Erosion" : 
                                      (choice == 51) ? "Dilation" : 
                                      (choice == 52) ? "Opening" : "Closing";
-                std::cout << "✓ " << opDesc << " applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ " << opDesc << " applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -718,10 +739,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Morphological::morphologicalGradient(currentImage, kernel);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("morphgrad" + std::to_string(size));
-                std::cout << "✓ Morphological gradient applied in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Morphological gradient applied in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -737,10 +759,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Geometric::rotate(currentImage, angle);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("rotate" + std::to_string((int)angle));
-                std::cout << "✓ Image rotated in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Image rotated in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -758,10 +781,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Geometric::resize(currentImage, width, height);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("resize" + std::to_string(width) + "x" + std::to_string(height));
-                std::cout << "✓ Image resized in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Image resized in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -779,10 +803,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Geometric::translate(currentImage, dx, dy);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("translate" + std::to_string(dx) + "x" + std::to_string(dy));
-                std::cout << "✓ Image translated in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Image translated in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -795,10 +820,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Geometric::flipHorizontal(currentImage);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("fliph");
-                std::cout << "✓ Image flipped horizontally in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Image flipped horizontally in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -811,10 +837,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Geometric::flipVertical(currentImage);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("flipv");
-                std::cout << "✓ Image flipped vertically in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Image flipped vertically in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -827,9 +854,10 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 auto channels = ColorOps::splitChannels(currentImage);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-                std::cout << "✓ Channels split in " << duration.count() 
-                          << " ms (OpenMP). Saving...\n";
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
+                std::cout << "✓ Channels split in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP). Saving...\n";
                 for (size_t i = 0; i < channels.size(); ++i) {
                     std::string baseName = getBaseName(fs::path(currentFilename).filename().string());
                     std::string fname = outputFolder + "/" + baseName + "_channel_" + std::to_string(i) + ".png";
@@ -848,10 +876,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = ColorOps::rgbToHsv(currentImage);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("hsv");
-                std::cout << "✓ Converted to HSV in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Converted to HSV in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -867,10 +896,11 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = ColorOps::adjustHue(currentImage, delta);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 appliedOperations.push_back("hue" + std::to_string((int)delta));
-                std::cout << "✓ Hue adjusted in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Hue adjusted in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -886,15 +916,16 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = ColorOps::adjustSaturation(currentImage, factor);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
                 if (dotPos != std::string::npos) {
                     factorStr = factorStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("sat" + factorStr);
-                std::cout << "✓ Saturation adjusted in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Saturation adjusted in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -910,15 +941,16 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = ColorOps::adjustValue(currentImage, factor);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
                 if (dotPos != std::string::npos) {
                     factorStr = factorStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("val" + factorStr);
-                std::cout << "✓ Value adjusted in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Value adjusted in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
@@ -938,7 +970,8 @@ int main() {
                 auto start = std::chrono::high_resolution_clock::now();
                 currentImage = ColorOps::colorBalance(currentImage, r, g, b);
                 auto end = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                auto duration_us = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                double duration_ms = duration_us.count() / 1000.0;
                 std::string rStr = std::to_string(r);
                 std::string gStr = std::to_string(g);
                 std::string bStr = std::to_string(b);
@@ -949,8 +982,8 @@ int main() {
                 dotPos = bStr.find(".");
                 if (dotPos != std::string::npos) bStr = bStr.substr(0, dotPos + 1);
                 appliedOperations.push_back("colbal" + rStr + "x" + gStr + "x" + bStr);
-                std::cout << "✓ Color balance adjusted in " << duration.count() 
-                          << " ms (OpenMP)\n";
+                std::cout << "✓ Color balance adjusted in " << std::fixed << std::setprecision(4) 
+                          << duration_ms << " ms (" << duration_us.count() << " μs) (OpenMP)\n";
                 break;
             }
             
