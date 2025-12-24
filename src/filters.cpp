@@ -13,7 +13,7 @@ Image boxBlur(const Image& img, int kernelSize) {
     Image result = img.createSimilar();
     int radius = kernelSize / 2;
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, sum, count, dx, dy, nx, ny, pixel, c) shared(img, result, radius)
     for (int y = 0; y < img.getHeight(); ++y) {
         for (int x = 0; x < img.getWidth(); ++x) {
             std::vector<float> sum(img.getChannels(), 0.0f);
@@ -71,7 +71,7 @@ Image gaussianBlur(const Image& img, int kernelSize, float sigma) {
     // Apply kernel
     Image result = img.createSimilar();
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, accum, dx, dy, nx, ny, pixel, weight, c) shared(img, result, kernel, radius)
     for (int y = 0; y < img.getHeight(); ++y) {
         for (int x = 0; x < img.getWidth(); ++x) {
             std::vector<float> accum(img.getChannels(), 0.0f);
@@ -109,7 +109,7 @@ Image medianFilter(const Image& img, int kernelSize) {
     Image result = img.createSimilar();
     int radius = kernelSize / 2;
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, values, dx, dy, nx, ny, pixel, c) shared(img, result, radius)
     for (int y = 0; y < img.getHeight(); ++y) {
         for (int x = 0; x < img.getWidth(); ++x) {
             std::vector<std::vector<uint8_t>> values(img.getChannels());
@@ -148,7 +148,7 @@ Image bilateralFilter(const Image& img, int diameter, double sigmaColor, double 
     Image result = img.createSimilar();
     int radius = diameter / 2;
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, centerPixel, accum, totalWeight, dx, dy, nx, ny, pixel, spatialDist, spatialWeight, colorDist, diff, colorWeight, weight, c) shared(img, result, radius, sigmaColor, sigmaSpace)
     for (int y = 0; y < img.getHeight(); ++y) {
         for (int x = 0; x < img.getWidth(); ++x) {
             const uint8_t* centerPixel = img.getPixel(x, y);

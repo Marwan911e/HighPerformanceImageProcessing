@@ -12,7 +12,7 @@ std::vector<Image> splitChannels(const Image& img) {
     for (int c = 0; c < img.getChannels(); ++c) {
         Image channel(img.getWidth(), img.getHeight(), 1);
         
-        #pragma omp parallel for collapse(2)
+        #pragma omp parallel for collapse(2) private(x, y, pixel) shared(img, channel, c)
         for (int y = 0; y < img.getHeight(); ++y) {
             for (int x = 0; x < img.getWidth(); ++x) {
                 const uint8_t* pixel = img.getPixel(x, y);
@@ -35,7 +35,7 @@ Image mergeChannels(const std::vector<Image>& channels) {
     
     Image result(width, height, numChannels);
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, pixel, c, ch) shared(channels, result, width, height, numChannels)
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
             uint8_t pixel[4] = {0, 0, 0, 255};
@@ -57,7 +57,7 @@ Image rgbToHsv(const Image& img) {
     
     Image result(img.getWidth(), img.getHeight(), 3);
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, rgb, r, g, b, max, min, delta, h, s, v, hsv) shared(img, result)
     for (int y = 0; y < img.getHeight(); ++y) {
         for (int x = 0; x < img.getWidth(); ++x) {
             const uint8_t* rgb = img.getPixel(x, y);
@@ -103,7 +103,7 @@ Image hsvToRgb(const Image& img) {
     
     Image result(img.getWidth(), img.getHeight(), 3);
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, hsv, h, s, v, c, x_val, m, r, g, b, rgb) shared(img, result)
     for (int y = 0; y < img.getHeight(); ++y) {
         for (int x = 0; x < img.getWidth(); ++x) {
             const uint8_t* hsv = img.getPixel(x, y);
@@ -209,7 +209,7 @@ Image colorBalance(const Image& img, float redFactor, float greenFactor, float b
     
     Image result = img.clone();
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, pixel) shared(result, redFactor, greenFactor, blueFactor)
     for (int y = 0; y < result.getHeight(); ++y) {
         for (int x = 0; x < result.getWidth(); ++x) {
             uint8_t* pixel = result.getPixel(x, y);
@@ -230,7 +230,7 @@ Image toneMapping(const Image& img, float exposure, float gamma) {
     size_t size = result.getDataSize();
     
     // Apply exposure
-    #pragma omp parallel for
+    #pragma omp parallel for private(i, val) shared(data, size, exposure, gamma)
     for (size_t i = 0; i < size; ++i) {
         float val = data[i] / 255.0f;
         val = val * std::pow(2.0f, exposure);

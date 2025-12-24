@@ -11,7 +11,7 @@ Image grayscale(const Image& img) {
     
     Image result(img.getWidth(), img.getHeight(), 1);
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, gray) shared(img, result)
     for (int y = 0; y < img.getHeight(); ++y) {
         for (int x = 0; x < img.getWidth(); ++x) {
             const uint8_t* pixel = img.getPixel(x, y);
@@ -38,7 +38,7 @@ Image adjustBrightness(const Image& img, int delta) {
     uint8_t* data = result.getData();
     size_t size = result.getDataSize();
     
-    #pragma omp parallel for
+    #pragma omp parallel for private(i, val) shared(data, size, delta)
     for (size_t i = 0; i < size; ++i) {
         int val = data[i] + delta;
         data[i] = static_cast<uint8_t>(std::max(0, std::min(255, val)));
@@ -56,7 +56,7 @@ Image adjustContrast(const Image& img, float factor) {
     
     float F = (259.0f * (factor * 255.0f + 255.0f)) / (255.0f * (259.0f - factor * 255.0f));
     
-    #pragma omp parallel for
+    #pragma omp parallel for private(i, val) shared(data, size, F)
     for (size_t i = 0; i < size; ++i) {
         float val = F * (data[i] - 128.0f) + 128.0f;
         data[i] = static_cast<uint8_t>(std::max(0.0f, std::min(255.0f, val)));
@@ -72,7 +72,7 @@ Image threshold(const Image& img, uint8_t thresh) {
     uint8_t* data = gray.getData();
     size_t size = gray.getDataSize();
     
-    #pragma omp parallel for
+    #pragma omp parallel for private(i) shared(data, size, thresh)
     for (size_t i = 0; i < size; ++i) {
         data[i] = (data[i] > thresh) ? 255 : 0;
     }
@@ -85,18 +85,19 @@ Image thresholdOtsu(const Image& img) {
     
     Image gray = (img.getChannels() > 1) ? grayscale(img) : img.clone();
     
-    // Calculate histogram
+    // Calculate histogram using thread-local storage and reduction
     int histogram[256] = {0};
     const uint8_t* data = gray.getData();
     size_t size = gray.getDataSize();
     
-    #pragma omp parallel
+    #pragma omp parallel shared(data, size, histogram)
     {
         int local_hist[256] = {0};
-        #pragma omp for nowait
+        #pragma omp for nowait private(i)
         for (size_t i = 0; i < size; ++i) {
             local_hist[data[i]]++;
         }
+        // Use critical section only for final reduction (better than atomics per pixel)
         #pragma omp critical
         {
             for (int i = 0; i < 256; ++i) {
@@ -148,7 +149,7 @@ Image adaptiveThreshold(const Image& img, int blockSize, int c, bool gaussian) {
     
     int radius = blockSize / 2;
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, sum, count, dx, dy, nx, ny, pixel, mean, value) shared(gray, result, radius, c, gaussian)
     for (int y = 0; y < gray.getHeight(); ++y) {
         for (int x = 0; x < gray.getWidth(); ++x) {
             float sum = 0;
@@ -193,7 +194,7 @@ Image adaptiveThresholdNiblack(const Image& img, int windowSize, double k) {
     
     int radius = windowSize / 2;
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, sum, sumSq, count, dx, dy, nx, ny, pixel, mean, variance, stddev, thresh, value) shared(gray, result, radius, k)
     for (int y = 0; y < gray.getHeight(); ++y) {
         for (int x = 0; x < gray.getWidth(); ++x) {
             double sum = 0;
@@ -238,7 +239,7 @@ Image adaptiveThresholdSauvola(const Image& img, int windowSize, double k, doubl
     
     int radius = windowSize / 2;
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, sum, sumSq, count, dx, dy, nx, ny, pixel, mean, variance, stddev, thresh, value) shared(gray, result, radius, k, r)
     for (int y = 0; y < gray.getHeight(); ++y) {
         for (int x = 0; x < gray.getWidth(); ++x) {
             double sum = 0;
@@ -281,7 +282,7 @@ Image invert(const Image& img) {
     uint8_t* data = result.getData();
     size_t size = result.getDataSize();
     
-    #pragma omp parallel for
+    #pragma omp parallel for private(i) shared(data, size)
     for (size_t i = 0; i < size; ++i) {
         data[i] = 255 - data[i];
     }
@@ -302,7 +303,7 @@ Image gammaCorrection(const Image& img, float gamma) {
         lut[i] = static_cast<uint8_t>(std::pow(i / 255.0f, gamma) * 255.0f);
     }
     
-    #pragma omp parallel for
+    #pragma omp parallel for private(i) shared(data, size, lut)
     for (size_t i = 0; i < size; ++i) {
         data[i] = lut[data[i]];
     }

@@ -39,7 +39,7 @@ Image gaussian(const Image& img, float mean, float stddev) {
     uint8_t* data = result.getData();
     size_t size = result.getDataSize();
     
-    #pragma omp parallel
+    #pragma omp parallel private(rng, dist, i, noise, val) shared(data, size, mean, stddev)
     {
         std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)) + omp_get_thread_num());
         std::normal_distribution<float> dist(mean, stddev);
@@ -62,7 +62,7 @@ Image speckle(const Image& img, float variance) {
     uint8_t* data = result.getData();
     size_t size = result.getDataSize();
     
-    #pragma omp parallel
+    #pragma omp parallel private(rng, dist, i, noise, val) shared(data, size, variance)
     {
         std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)) + omp_get_thread_num());
         std::normal_distribution<float> dist(0.0f, std::sqrt(variance));

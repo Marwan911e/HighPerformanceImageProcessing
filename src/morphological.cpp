@@ -48,7 +48,7 @@ Image erode(const Image& img, const std::vector<std::vector<int>>& kernel) {
     int cy = kh / 2;
     int cx = kw / 2;
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, minVal, ky, kx, nx, ny, pixel) shared(gray, result, kernel, kh, kw, cy, cx)
     for (int y = 0; y < gray.getHeight(); ++y) {
         for (int x = 0; x < gray.getWidth(); ++x) {
             uint8_t minVal = 255;
@@ -85,7 +85,7 @@ Image dilate(const Image& img, const std::vector<std::vector<int>>& kernel) {
     int cy = kh / 2;
     int cx = kw / 2;
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, maxVal, ky, kx, nx, ny, pixel) shared(gray, result, kernel, kh, kw, cy, cx)
     for (int y = 0; y < gray.getHeight(); ++y) {
         for (int x = 0; x < gray.getWidth(); ++x) {
             uint8_t maxVal = 0;
@@ -124,7 +124,7 @@ Image morphologicalGradient(const Image& img, const std::vector<std::vector<int>
     Image eroded = erode(img, kernel);
     Image result = dilated.createSimilar();
     
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(x, y, d, e, value) shared(dilated, eroded, result)
     for (int y = 0; y < result.getHeight(); ++y) {
         for (int x = 0; x < result.getWidth(); ++x) {
             const uint8_t* d = dilated.getPixel(x, y);
