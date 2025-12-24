@@ -1,6 +1,7 @@
 #include "geometric.h"
 #include <cmath>
 #include <algorithm>
+#include <omp.h>
 
 namespace Geometric {
 
@@ -21,6 +22,7 @@ Image rotate(const Image& img, double angle, Interpolation interp) {
     int ncx = newWidth / 2;
     int ncy = newHeight / 2;
     
+    #pragma omp parallel for collapse(2)
     for (int y = 0; y < newHeight; ++y) {
         for (int x = 0; x < newWidth; ++x) {
             int dx = x - ncx;
@@ -78,6 +80,7 @@ Image resize(const Image& img, int newWidth, int newHeight, Interpolation interp
     float scaleX = static_cast<float>(img.getWidth()) / newWidth;
     float scaleY = static_cast<float>(img.getHeight()) / newHeight;
     
+    #pragma omp parallel for collapse(2)
     for (int y = 0; y < newHeight; ++y) {
         for (int x = 0; x < newWidth; ++x) {
             float srcX = x * scaleX;
@@ -125,6 +128,7 @@ Image translate(const Image& img, int dx, int dy) {
     
     Image result = img.createSimilar();
     
+    #pragma omp parallel for collapse(2)
     for (int y = 0; y < img.getHeight(); ++y) {
         for (int x = 0; x < img.getWidth(); ++x) {
             int srcX = x - dx;
@@ -145,6 +149,7 @@ Image flipHorizontal(const Image& img) {
     
     Image result = img.createSimilar();
     
+    #pragma omp parallel for collapse(2)
     for (int y = 0; y < img.getHeight(); ++y) {
         for (int x = 0; x < img.getWidth(); ++x) {
             const uint8_t* pixel = img.getPixel(img.getWidth() - 1 - x, y);
@@ -160,6 +165,7 @@ Image flipVertical(const Image& img) {
     
     Image result = img.createSimilar();
     
+    #pragma omp parallel for collapse(2)
     for (int y = 0; y < img.getHeight(); ++y) {
         for (int x = 0; x < img.getWidth(); ++x) {
             const uint8_t* pixel = img.getPixel(x, img.getHeight() - 1 - y);

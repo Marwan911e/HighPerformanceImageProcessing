@@ -67,7 +67,7 @@ int main() {
     std::string currentFilename;
     
     std::cout << "========================================\n";
-    std::cout << "  IMAGE PROCESSING APPLICATION (SERIAL)\n";
+    std::cout << "  IMAGE PROCESSING APPLICATION (OpenMP)\n";
     std::cout << "========================================\n";
     std::cout << "\nSupported formats: JPG, PNG, BMP, TGA\n";
     

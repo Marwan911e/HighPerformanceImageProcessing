@@ -2,6 +2,7 @@
 #include "point_operations.h"
 #include <random>
 #include <ctime>
+#include <omp.h>
 
 namespace Noise {
 
@@ -35,16 +36,20 @@ Image gaussian(const Image& img, float mean, float stddev) {
     if (!img.isValid()) return Image();
     
     Image result = img.clone();
-    std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
-    std::normal_distribution<float> dist(mean, stddev);
-    
     uint8_t* data = result.getData();
     size_t size = result.getDataSize();
     
-    for (size_t i = 0; i < size; ++i) {
-        float noise = dist(rng);
-        int val = static_cast<int>(data[i] + noise);
-        data[i] = static_cast<uint8_t>(std::max(0, std::min(255, val)));
+    #pragma omp parallel
+    {
+        std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)) + omp_get_thread_num());
+        std::normal_distribution<float> dist(mean, stddev);
+        
+        #pragma omp for
+        for (size_t i = 0; i < size; ++i) {
+            float noise = dist(rng);
+            int val = static_cast<int>(data[i] + noise);
+            data[i] = static_cast<uint8_t>(std::max(0, std::min(255, val)));
+        }
     }
     
     return result;
@@ -54,16 +59,20 @@ Image speckle(const Image& img, float variance) {
     if (!img.isValid()) return Image();
     
     Image result = img.clone();
-    std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
-    std::normal_distribution<float> dist(0.0f, std::sqrt(variance));
-    
     uint8_t* data = result.getData();
     size_t size = result.getDataSize();
     
-    for (size_t i = 0; i < size; ++i) {
-        float noise = 1.0f + dist(rng);
-        int val = static_cast<int>(data[i] * noise);
-        data[i] = static_cast<uint8_t>(std::max(0, std::min(255, val)));
+    #pragma omp parallel
+    {
+        std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)) + omp_get_thread_num());
+        std::normal_distribution<float> dist(0.0f, std::sqrt(variance));
+        
+        #pragma omp for
+        for (size_t i = 0; i < size; ++i) {
+            float noise = 1.0f + dist(rng);
+            int val = static_cast<int>(data[i] * noise);
+            data[i] = static_cast<uint8_t>(std::max(0, std::min(255, val)));
+        }
     }
     
     return result;

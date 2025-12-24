@@ -1,7 +1,7 @@
-# Makefile for Image Processing Project
+# Makefile for Image Processing Project (OpenMP Version)
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -O2 -I./include -I./lib
-LDFLAGS = 
+CXXFLAGS = -std=c++17 -Wall -O2 -fopenmp -I./include -I./lib
+LDFLAGS = -fopenmp 
 
 # Source files
 SRCDIR = src

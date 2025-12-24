@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <omp.h>
 
 namespace PointOps {
 
@@ -10,6 +11,7 @@ Image grayscale(const Image& img) {
     
     Image result(img.getWidth(), img.getHeight(), 1);
     
+    #pragma omp parallel for collapse(2)
     for (int y = 0; y < img.getHeight(); ++y) {
         for (int x = 0; x < img.getWidth(); ++x) {
             const uint8_t* pixel = img.getPixel(x, y);
@@ -36,6 +38,7 @@ Image adjustBrightness(const Image& img, int delta) {
     uint8_t* data = result.getData();
     size_t size = result.getDataSize();
     
+    #pragma omp parallel for
     for (size_t i = 0; i < size; ++i) {
         int val = data[i] + delta;
         data[i] = static_cast<uint8_t>(std::max(0, std::min(255, val)));
@@ -53,6 +56,7 @@ Image adjustContrast(const Image& img, float factor) {
     
     float F = (259.0f * (factor * 255.0f + 255.0f)) / (255.0f * (259.0f - factor * 255.0f));
     
+    #pragma omp parallel for
     for (size_t i = 0; i < size; ++i) {
         float val = F * (data[i] - 128.0f) + 128.0f;
         data[i] = static_cast<uint8_t>(std::max(0.0f, std::min(255.0f, val)));
@@ -68,6 +72,7 @@ Image threshold(const Image& img, uint8_t thresh) {
     uint8_t* data = gray.getData();
     size_t size = gray.getDataSize();
     
+    #pragma omp parallel for
     for (size_t i = 0; i < size; ++i) {
         data[i] = (data[i] > thresh) ? 255 : 0;
     }
@@ -85,8 +90,19 @@ Image thresholdOtsu(const Image& img) {
     const uint8_t* data = gray.getData();
     size_t size = gray.getDataSize();
     
-    for (size_t i = 0; i < size; ++i) {
-        histogram[data[i]]++;
+    #pragma omp parallel
+    {
+        int local_hist[256] = {0};
+        #pragma omp for nowait
+        for (size_t i = 0; i < size; ++i) {
+            local_hist[data[i]]++;
+        }
+        #pragma omp critical
+        {
+            for (int i = 0; i < 256; ++i) {
+                histogram[i] += local_hist[i];
+            }
+        }
     }
     
     // Calculate Otsu threshold
@@ -132,6 +148,7 @@ Image adaptiveThreshold(const Image& img, int blockSize, int c, bool gaussian) {
     
     int radius = blockSize / 2;
     
+    #pragma omp parallel for collapse(2)
     for (int y = 0; y < gray.getHeight(); ++y) {
         for (int x = 0; x < gray.getWidth(); ++x) {
             float sum = 0;
@@ -176,6 +193,7 @@ Image adaptiveThresholdNiblack(const Image& img, int windowSize, double k) {
     
     int radius = windowSize / 2;
     
+    #pragma omp parallel for collapse(2)
     for (int y = 0; y < gray.getHeight(); ++y) {
         for (int x = 0; x < gray.getWidth(); ++x) {
             double sum = 0;
@@ -220,6 +238,7 @@ Image adaptiveThresholdSauvola(const Image& img, int windowSize, double k, doubl
     
     int radius = windowSize / 2;
     
+    #pragma omp parallel for collapse(2)
     for (int y = 0; y < gray.getHeight(); ++y) {
         for (int x = 0; x < gray.getWidth(); ++x) {
             double sum = 0;
@@ -262,6 +281,7 @@ Image invert(const Image& img) {
     uint8_t* data = result.getData();
     size_t size = result.getDataSize();
     
+    #pragma omp parallel for
     for (size_t i = 0; i < size; ++i) {
         data[i] = 255 - data[i];
     }
@@ -282,6 +302,7 @@ Image gammaCorrection(const Image& img, float gamma) {
         lut[i] = static_cast<uint8_t>(std::pow(i / 255.0f, gamma) * 255.0f);
     }
     
+    #pragma omp parallel for
     for (size_t i = 0; i < size; ++i) {
         data[i] = lut[data[i]];
     }
