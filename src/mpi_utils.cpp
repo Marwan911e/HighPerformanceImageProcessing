@@ -246,5 +246,114 @@ Image removeHalo(const Image& extendedImage, int rank, int size, int haloSize) {
     return result;
 }
 
+// ===== NEW: Functions for computation-communication overlap =====
+
+// Start non-blocking boundary exchange without waiting
+BoundaryExchange startBoundaryExchange(const Image& localChunk, int rank, int size, int haloSize) {
+    BoundaryExchange exchange;
+    exchange.rank = rank;
+    exchange.size = size;
+    exchange.haloSize = haloSize;
+    
+    if (haloSize == 0) {
+        exchange.extended = localChunk.clone();
+        return exchange;
+    }
+    
+    int width = localChunk.getWidth();
+    int height = localChunk.getHeight();
+    int channels = localChunk.getChannels();
+    int rowSize = width * channels;
+    
+    // Create extended image with space for halos
+    int topHalo = (rank > 0) ? haloSize : 0;
+    int bottomHalo = (rank < size - 1) ? haloSize : 0;
+    exchange.extended = extendWithHalo(localChunk, rank, size, haloSize);
+    
+    // Start non-blocking communication
+    // Exchange with upper neighbor (rank-1)
+    if (rank > 0) {
+        // Send top boundary rows to rank-1
+        const uint8_t* topRows = localChunk.getPixel(0, 0);
+        MPI_Request sendReq;
+        MPI_Isend(const_cast<uint8_t*>(topRows), rowSize * haloSize, MPI_BYTE, 
+                 rank - 1, 1, MPI_COMM_WORLD, &sendReq);
+        exchange.requests.push_back(sendReq);
+        
+        // Receive boundary from rank-1 (will go into top halo)
+        uint8_t* topHaloBuf = exchange.extended.getPixel(0, 0);
+        MPI_Request recvReq;
+        MPI_Irecv(topHaloBuf, rowSize * haloSize, MPI_BYTE, 
+                 rank - 1, 2, MPI_COMM_WORLD, &recvReq);
+        exchange.requests.push_back(recvReq);
+    }
+    
+    // Exchange with lower neighbor (rank+1)
+    if (rank < size - 1) {
+        // Send bottom boundary rows to rank+1
+        const uint8_t* bottomRows = localChunk.getPixel(0, height - haloSize);
+        MPI_Request sendReq;
+        MPI_Isend(const_cast<uint8_t*>(bottomRows), rowSize * haloSize, MPI_BYTE, 
+                 rank + 1, 2, MPI_COMM_WORLD, &sendReq);
+        exchange.requests.push_back(sendReq);
+        
+        // Receive boundary from rank+1 (will go into bottom halo)
+        uint8_t* bottomHaloBuf = exchange.extended.getPixel(0, height + topHalo);
+        MPI_Request recvReq;
+        MPI_Irecv(bottomHaloBuf, rowSize * haloSize, MPI_BYTE, 
+                 rank + 1, 1, MPI_COMM_WORLD, &recvReq);
+        exchange.requests.push_back(recvReq);
+    }
+    
+    // Return immediately without waiting - allows computation to proceed
+    return exchange;
+}
+
+// Wait for boundary exchange to complete
+void waitBoundaryExchange(BoundaryExchange& exchange) {
+    if (!exchange.requests.empty()) {
+        std::vector<MPI_Status> statuses(exchange.requests.size());
+        MPI_Waitall(exchange.requests.size(), exchange.requests.data(), statuses.data());
+        exchange.requests.clear();
+    }
+}
+
+// Get inner region boundaries (pixels that don't need halo data)
+void getInnerRegion(int localHeight, int haloSize, int rank, int size, 
+                   int& startY, int& endY) {
+    int topHalo = (rank > 0) ? haloSize : 0;
+    
+    // Inner region excludes border pixels that depend on halos
+    // Start after top halo + border zone
+    startY = topHalo + haloSize;
+    // End before bottom border zone
+    endY = topHalo + localHeight - haloSize;
+    
+    // Clamp to valid range
+    if (startY > topHalo + localHeight) startY = topHalo + localHeight;
+    if (endY < startY) endY = startY;
+}
+
+// Get border region boundaries (pixels that need halo data)
+void getBorderRegions(int localHeight, int haloSize, int rank, int size,
+                     int& topStart, int& topEnd, int& bottomStart, int& bottomEnd) {
+    int topHalo = (rank > 0) ? haloSize : 0;
+    
+    // Top border region (first haloSize rows of actual data)
+    topStart = topHalo;
+    topEnd = topHalo + haloSize;
+    
+    // Bottom border region (last haloSize rows of actual data)
+    bottomStart = topHalo + localHeight - haloSize;
+    bottomEnd = topHalo + localHeight;
+    
+    // Clamp to valid ranges
+    if (topEnd > topHalo + localHeight) topEnd = topHalo + localHeight;
+    if (bottomStart < topHalo) bottomStart = topHalo;
+    if (bottomEnd > topHalo + localHeight) bottomEnd = topHalo + localHeight;
+}
+
+// ===== End new functions =====
+
 } // namespace MPIUtils
 
