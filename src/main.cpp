@@ -1,17 +1,20 @@
 #include "image.h"
 #include "point_operations.h"
+#include "point_operations_mpi.h"
 #include "noise.h"
 #include "filters.h"
 #include "edge_detection.h"
 #include "morphological.h"
 #include "geometric.h"
 #include "color_operations.h"
+#include "mpi_utils.h"
 #include <iostream>
 #include <string>
 #include <iomanip>
 #include <filesystem>
 #include <vector>
 #include <algorithm>
+#include <mpi.h>
 
 namespace fs = std::filesystem;
 
@@ -103,8 +106,16 @@ void displayMenu() {
     std::cout << "Enter choice: ";
 }
 
-int main() {
-    Image currentImage;
+int main(int argc, char** argv) {
+    // Initialize MPI
+    MPI_Init(&argc, &argv);
+    
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    
+    Image currentImage;        // Full image (only on rank 0)
+    Image localChunk;          // Local chunk (on all ranks)
     std::string currentFilename;
     std::string currentBaseName;
     std::string currentExtension;
@@ -112,197 +123,271 @@ int main() {
     std::string outputFolder = "output";
     std::vector<std::string> appliedOperations;  // Track operations for filename generation
     
-    // Create folders if they don't exist
-    fs::create_directories(inputFolder);
-    fs::create_directories(outputFolder);
-    
-    std::cout << "========================================\n";
-    std::cout << "  IMAGE PROCESSING APPLICATION (SERIAL)\n";
-    std::cout << "========================================\n";
-    std::cout << "\n📁 Input folder: " << inputFolder << "/\n";
-    std::cout << "📁 Output folder: " << outputFolder << "/\n";
-    std::cout << "Supported formats: JPG, PNG, BMP, TGA\n";
-    std::cout << "\n💡 Tip: Apply multiple operations, then save once (option 2)\n";
+    // Only rank 0 handles I/O setup
+    if (rank == 0) {
+        // Create folders if they don't exist
+        fs::create_directories(inputFolder);
+        fs::create_directories(outputFolder);
+        
+        std::cout << "========================================\n";
+        std::cout << "  IMAGE PROCESSING APPLICATION (MPI)\n";
+        std::cout << "========================================\n";
+        std::cout << "Running on " << size << " processes\n";
+        std::cout << "\n📁 Input folder: " << inputFolder << "/\n";
+        std::cout << "📁 Output folder: " << outputFolder << "/\n";
+        std::cout << "Supported formats: JPG, PNG, BMP, TGA\n";
+        std::cout << "\n💡 Tip: Apply multiple operations, then save once (option 2)\n";
+    }
     
     while (true) {
-        displayMenu();
+        int choice = 0;
         
-        int choice;
-        std::cin >> choice;
+        // Only rank 0 displays menu and gets user input
+        if (rank == 0) {
+            displayMenu();
+            std::cin >> choice;
+        }
+        
+        // Broadcast choice to all processes
+        MPI_Bcast(&choice, 1, MPI_INT, 0, MPI_COMM_WORLD);
         
         if (choice == 0) {
-            std::cout << "\nExiting...\n";
+            if (rank == 0) {
+                std::cout << "\nExiting...\n";
+            }
             break;
         }
         
         switch (choice) {
             case 1: {
-                // AUTOMATIC FILE BROWSER - Show all images and let user pick by number
-                std::vector<std::string> images = listImages(inputFolder);
+                // AUTOMATIC FILE BROWSER - Only rank 0 handles I/O
+                int imgChoice = 0;
+                int filenameLen = 0;
+                char filenameBuffer[512] = {0};
                 
-                if (images.empty()) {
-                    std::cout << "\n⚠ No images found in " << inputFolder << "/ folder.\n";
-                    std::cout << "Please place images in the " << inputFolder << "/ directory.\n";
-                    break;
-                }
-                
-                std::cout << "\n📋 Available images in " << inputFolder << "/:\n";
-                std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-                for (size_t i = 0; i < images.size(); ++i) {
-                    // Show file size for better info
-                    std::string fullPath = inputFolder + "/" + images[i];
-                    if (fs::exists(fullPath)) {
-                        auto fileSize = fs::file_size(fullPath);
-                        double sizeMB = fileSize / (1024.0 * 1024.0);
-                        std::cout << "  " << std::setw(2) << (i + 1) << ". " 
-                                  << std::setw(30) << std::left << images[i]
-                                  << " (" << std::fixed << std::setprecision(2) 
-                                  << sizeMB << " MB)\n";
+                if (rank == 0) {
+                    std::vector<std::string> images = listImages(inputFolder);
+                    
+                    if (images.empty()) {
+                        std::cout << "\n⚠ No images found in " << inputFolder << "/ folder.\n";
+                        std::cout << "Please place images in the " << inputFolder << "/ directory.\n";
+                        imgChoice = -1; // Signal error
                     } else {
-                        std::cout << "  " << std::setw(2) << (i + 1) << ". " 
-                                  << images[i] << "\n";
+                        std::cout << "\n📋 Available images in " << inputFolder << "/:\n";
+                        std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+                        for (size_t i = 0; i < images.size(); ++i) {
+                            std::string fullPath = inputFolder + "/" + images[i];
+                            if (fs::exists(fullPath)) {
+                                auto fileSize = fs::file_size(fullPath);
+                                double sizeMB = fileSize / (1024.0 * 1024.0);
+                                std::cout << "  " << std::setw(2) << (i + 1) << ". " 
+                                          << std::setw(30) << std::left << images[i]
+                                          << " (" << std::fixed << std::setprecision(2) 
+                                          << sizeMB << " MB)\n";
+                            } else {
+                                std::cout << "  " << std::setw(2) << (i + 1) << ". " 
+                                          << images[i] << "\n";
+                            }
+                        }
+                        std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+                        std::cout << "\nSelect image number (1-" << images.size() << "): ";
+                        std::cin >> imgChoice;
+                        
+                        if (imgChoice >= 1 && imgChoice <= static_cast<int>(images.size())) {
+                            currentFilename = inputFolder + "/" + images[imgChoice - 1];
+                            if (currentImage.load(currentFilename)) {
+                                currentBaseName = getBaseName(images[imgChoice - 1]);
+                                currentExtension = getExtension(images[imgChoice - 1]);
+                                appliedOperations.clear();
+                                std::cout << "\n✓ Image loaded: " << images[imgChoice - 1] << "\n";
+                                std::cout << "  Dimensions: " << currentImage.getWidth() 
+                                          << "x" << currentImage.getHeight();
+                                std::cout << ", Channels: " << currentImage.getChannels() << "\n";
+                                
+                                // Prepare filename for broadcast
+                                strncpy(filenameBuffer, currentFilename.c_str(), 511);
+                                filenameLen = currentFilename.length();
+                            } else {
+                                std::cout << "✗ Error: Failed to load image.\n";
+                                imgChoice = -1;
+                            }
+                        } else {
+                            std::cout << "✗ Invalid selection. Please choose 1-" << images.size() << ".\n";
+                            imgChoice = -1;
+                        }
                     }
                 }
-                std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-                std::cout << "\nSelect image number (1-" << images.size() << "): ";
                 
-                int imgChoice;
-                std::cin >> imgChoice;
+                // Broadcast image choice and filename
+                MPI_Bcast(&imgChoice, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                MPI_Bcast(&filenameLen, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                MPI_Bcast(filenameBuffer, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
                 
-                if (imgChoice >= 1 && imgChoice <= static_cast<int>(images.size())) {
-                    currentFilename = inputFolder + "/" + images[imgChoice - 1];
-                    if (currentImage.load(currentFilename)) {
-                        currentBaseName = getBaseName(images[imgChoice - 1]);
-                        currentExtension = getExtension(images[imgChoice - 1]);
-                        appliedOperations.clear(); // Reset operations when loading new image
-                        std::cout << "\n✓ Image loaded: " << images[imgChoice - 1] << "\n";
-                        std::cout << "  Dimensions: " << currentImage.getWidth() 
-                                  << "x" << currentImage.getHeight();
-                        std::cout << ", Channels: " << currentImage.getChannels() << "\n";
-                    } else {
-                        std::cout << "✗ Error: Failed to load image.\n";
+                if (imgChoice > 0) {
+                    // Distribute image to all processes
+                    MPIUtils::distributeImage(currentImage, localChunk, rank, size);
+                    
+                    // Broadcast filename info to all ranks
+                    if (rank != 0) {
+                        currentFilename = std::string(filenameBuffer);
+                        currentBaseName = getBaseName(fs::path(currentFilename).filename().string());
+                        currentExtension = getExtension(fs::path(currentFilename).filename().string());
                     }
-                } else {
-                    std::cout << "✗ Invalid selection. Please choose 1-" << images.size() << ".\n";
                 }
                 break;
             }
             
             case 2: {
-                // Save with smart filename generation
-                if (!currentImage.isValid()) {
-                    std::cout << "✗ Error: No image loaded.\n";
-                    break;
-                }
+                // Save with smart filename generation - Gather from all processes first
+                // Gather local chunks back to rank 0
+                MPIUtils::gatherImage(localChunk, currentImage, rank, size);
                 
-                std::string filename;
-                
-                if (appliedOperations.empty()) {
-                    // No operations applied, ask for custom name
-                    std::cout << "Enter output filename (with extension): ";
-                    std::cin >> filename;
-                } else {
-                    // Generate filename from operations
-                    std::string baseName = getBaseName(fs::path(currentFilename).filename().string());
-                    std::string ext = getExtension(fs::path(currentFilename).filename().string());
-                    filename = outputFolder + "/" + baseName;
-                    
-                    // Add all operation names
-                    for (const auto& op : appliedOperations) {
-                        filename += "_" + op;
+                // Only rank 0 handles file saving
+                if (rank == 0) {
+                    if (!currentImage.isValid()) {
+                        std::cout << "✗ Error: No image loaded.\n";
+                        break;
                     }
-                    filename += ext;
                     
-                    std::cout << "\n📝 Auto-generated filename: " << filename << "\n";
-                    std::cout << "   Applied operations: ";
-                    for (size_t i = 0; i < appliedOperations.size(); ++i) {
-                        std::cout << appliedOperations[i];
-                        if (i < appliedOperations.size() - 1) std::cout << " → ";
-                    }
-                    std::cout << "\n";
-                    std::cout << "Use this name? (y/n, or enter 'c' for custom): ";
-                    char choice;
-                    std::cin >> choice;
-                    if (choice != 'y' && choice != 'Y') {
-                        if (choice == 'c' || choice == 'C') {
-                            std::cout << "Enter custom filename: ";
-                            std::cin >> filename;
-                        } else {
-                            // User entered 'n', ask for custom name
-                            std::cout << "Enter custom filename: ";
-                            std::cin >> filename;
+                    std::string filename;
+                    
+                    if (appliedOperations.empty()) {
+                        std::cout << "Enter output filename (with extension): ";
+                        std::cin >> filename;
+                    } else {
+                        std::string baseName = getBaseName(fs::path(currentFilename).filename().string());
+                        std::string ext = getExtension(fs::path(currentFilename).filename().string());
+                        filename = outputFolder + "/" + baseName;
+                        
+                        for (const auto& op : appliedOperations) {
+                            filename += "_" + op;
+                        }
+                        filename += ext;
+                        
+                        std::cout << "\n📝 Auto-generated filename: " << filename << "\n";
+                        std::cout << "   Applied operations: ";
+                        for (size_t i = 0; i < appliedOperations.size(); ++i) {
+                            std::cout << appliedOperations[i];
+                            if (i < appliedOperations.size() - 1) std::cout << " → ";
+                        }
+                        std::cout << "\n";
+                        std::cout << "Use this name? (y/n, or enter 'c' for custom): ";
+                        char choice;
+                        std::cin >> choice;
+                        if (choice != 'y' && choice != 'Y') {
+                            if (choice == 'c' || choice == 'C') {
+                                std::cout << "Enter custom filename: ";
+                                std::cin >> filename;
+                            } else {
+                                std::cout << "Enter custom filename: ";
+                                std::cin >> filename;
+                            }
                         }
                     }
-                }
-                
-                if (currentImage.save(filename)) {
-                    std::cout << "✓ Image saved successfully to: " << filename << "\n";
-                    appliedOperations.clear(); // Reset after successful save
-                } else {
-                    std::cout << "✗ Error: Failed to save image.\n";
+                    
+                    if (currentImage.save(filename)) {
+                        std::cout << "✓ Image saved successfully to: " << filename << "\n";
+                        appliedOperations.clear();
+                    } else {
+                        std::cout << "✗ Error: Failed to save image.\n";
+                    }
                 }
                 break;
             }
             
             case 10: {
-                // Grayscale
-                if (!currentImage.isValid()) { 
-                    std::cout << "✗ No image loaded. Please select an image first (option 1).\n"; 
-                    break; 
+                // Grayscale - MPI version
+                if (!localChunk.isValid()) {
+                    if (rank == 0) {
+                        std::cout << "✗ No image loaded. Please select an image first (option 1).\n";
+                    }
+                    break;
                 }
-                currentImage = PointOps::grayscale(currentImage);
-                appliedOperations.push_back("grayscale");
-                std::cout << "✓ Converted to grayscale. (Image in memory - use option 2 to save)\n";
+                
+                // Process local chunk
+                localChunk = PointOpsMPI::grayscale(localChunk, rank, size);
+                
+                if (rank == 0) {
+                    appliedOperations.push_back("grayscale");
+                    std::cout << "✓ Converted to grayscale. (Image in memory - use option 2 to save)\n";
+                }
                 break;
             }
             
             case 11: {
-                // Brightness
-                if (!currentImage.isValid()) { 
-                    std::cout << "✗ No image loaded.\n"; 
-                    break; 
+                // Brightness - MPI version
+                int delta = 0;
+                if (rank == 0) {
+                    if (!localChunk.isValid()) {
+                        std::cout << "✗ No image loaded.\n";
+                        delta = 0; // Signal error
+                    } else {
+                        std::cout << "Enter brightness delta (-255 to 255): ";
+                        std::cin >> delta;
+                    }
                 }
-                int delta;
-                std::cout << "Enter brightness delta (-255 to 255): ";
-                std::cin >> delta;
-                currentImage = PointOps::adjustBrightness(currentImage, delta);
-                appliedOperations.push_back("brightness" + std::to_string(delta));
-                std::cout << "✓ Brightness adjusted. (Image in memory - use option 2 to save)\n";
+                MPI_Bcast(&delta, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                
+                if (delta != 0 || localChunk.isValid()) {
+                    localChunk = PointOpsMPI::adjustBrightness(localChunk, delta, rank, size);
+                    if (rank == 0) {
+                        appliedOperations.push_back("brightness" + std::to_string(delta));
+                        std::cout << "✓ Brightness adjusted. (Image in memory - use option 2 to save)\n";
+                    }
+                }
                 break;
             }
             
             case 12: {
-                // Contrast
-                if (!currentImage.isValid()) { 
-                    std::cout << "✗ No image loaded.\n"; 
-                    break; 
+                // Contrast - MPI version
+                float factor = 0.0f;
+                if (rank == 0) {
+                    if (!localChunk.isValid()) {
+                        std::cout << "✗ No image loaded.\n";
+                        factor = 0.0f; // Signal error
+                    } else {
+                        std::cout << "Enter contrast factor (0.0 to 3.0): ";
+                        std::cin >> factor;
+                    }
                 }
-                float factor;
-                std::cout << "Enter contrast factor (0.0 to 3.0): ";
-                std::cin >> factor;
-                currentImage = PointOps::adjustContrast(currentImage, factor);
-                std::string factorStr = std::to_string(factor);
-                size_t dotPos = factorStr.find(".");
-                if (dotPos != std::string::npos) {
-                    factorStr = factorStr.substr(0, dotPos + 2);
+                MPI_Bcast(&factor, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+                
+                if (factor != 0.0f || localChunk.isValid()) {
+                    localChunk = PointOpsMPI::adjustContrast(localChunk, factor, rank, size);
+                    if (rank == 0) {
+                        std::string factorStr = std::to_string(factor);
+                        size_t dotPos = factorStr.find(".");
+                        if (dotPos != std::string::npos) {
+                            factorStr = factorStr.substr(0, dotPos + 2);
+                        }
+                        appliedOperations.push_back("contrast" + factorStr);
+                        std::cout << "✓ Contrast adjusted. (Image in memory - use option 2 to save)\n";
+                    }
                 }
-                appliedOperations.push_back("contrast" + factorStr);
-                std::cout << "✓ Contrast adjusted. (Image in memory - use option 2 to save)\n";
                 break;
             }
             
             case 13: {
-                // Manual Threshold
-                if (!currentImage.isValid()) { 
-                    std::cout << "✗ No image loaded.\n"; 
-                    break; 
+                // Manual Threshold - MPI version
+                int thresh = 0;
+                if (rank == 0) {
+                    if (!localChunk.isValid()) {
+                        std::cout << "✗ No image loaded.\n";
+                        thresh = -1; // Signal error
+                    } else {
+                        std::cout << "Enter threshold value (0-255): ";
+                        std::cin >> thresh;
+                    }
                 }
-                int thresh;
-                std::cout << "Enter threshold value (0-255): ";
-                std::cin >> thresh;
-                currentImage = PointOps::threshold(currentImage, thresh);
-                appliedOperations.push_back("threshold" + std::to_string(thresh));
-                std::cout << "✓ Threshold applied. (Image in memory - use option 2 to save)\n";
+                MPI_Bcast(&thresh, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                
+                if (thresh >= 0 && localChunk.isValid()) {
+                    localChunk = PointOpsMPI::threshold(localChunk, thresh, rank, size);
+                    if (rank == 0) {
+                        appliedOperations.push_back("threshold" + std::to_string(thresh));
+                        std::cout << "✓ Threshold applied. (Image in memory - use option 2 to save)\n";
+                    }
+                }
                 break;
             }
             
@@ -338,14 +423,20 @@ int main() {
             }
             
             case 16: {
-                // Invert
-                if (!currentImage.isValid()) { 
-                    std::cout << "✗ No image loaded.\n"; 
-                    break; 
+                // Invert - MPI version
+                if (!localChunk.isValid()) {
+                    if (rank == 0) {
+                        std::cout << "✗ No image loaded.\n";
+                    }
+                    break;
                 }
-                currentImage = PointOps::invert(currentImage);
-                appliedOperations.push_back("invert");
-                std::cout << "✓ Image inverted. (Image in memory - use option 2 to save)\n";
+                
+                localChunk = PointOpsMPI::invert(localChunk, rank, size);
+                
+                if (rank == 0) {
+                    appliedOperations.push_back("invert");
+                    std::cout << "✓ Image inverted. (Image in memory - use option 2 to save)\n";
+                }
                 break;
             }
             
@@ -827,5 +918,7 @@ int main() {
         }
     }
     
+    // Finalize MPI
+    MPI_Finalize();
     return 0;
 }
