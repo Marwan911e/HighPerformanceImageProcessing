@@ -12,6 +12,7 @@
 #include <filesystem>
 #include <vector>
 #include <algorithm>
+#include <chrono>
 
 namespace fs = std::filesystem;
 
@@ -250,9 +251,13 @@ int main() {
                     std::cout << "✗ No image loaded. Please select an image first (option 1).\n"; 
                     break; 
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::grayscale(currentImage);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("grayscale");
-                std::cout << "✓ Converted to grayscale. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Converted to grayscale in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -265,9 +270,13 @@ int main() {
                 int delta;
                 std::cout << "Enter brightness delta (-255 to 255): ";
                 std::cin >> delta;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::adjustBrightness(currentImage, delta);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("brightness" + std::to_string(delta));
-                std::cout << "✓ Brightness adjusted. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Brightness adjusted in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -280,14 +289,18 @@ int main() {
                 float factor;
                 std::cout << "Enter contrast factor (0.0 to 3.0): ";
                 std::cin >> factor;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::adjustContrast(currentImage, factor);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
                 if (dotPos != std::string::npos) {
                     factorStr = factorStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("contrast" + factorStr);
-                std::cout << "✓ Contrast adjusted. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Contrast adjusted in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -300,9 +313,13 @@ int main() {
                 int thresh;
                 std::cout << "Enter threshold value (0-255): ";
                 std::cin >> thresh;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::threshold(currentImage, thresh);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("threshold" + std::to_string(thresh));
-                std::cout << "✓ Threshold applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Threshold applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -312,9 +329,13 @@ int main() {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::thresholdOtsu(currentImage);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("otsu");
-                std::cout << "✓ Otsu threshold applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Otsu threshold applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -331,9 +352,13 @@ int main() {
                     std::cout << "⚠ Warning: Block size must be odd and >= 3. Using 11 instead.\n";
                     blockSize = 11;
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::adaptiveThreshold(currentImage, blockSize, 2, true);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("adaptthresh" + std::to_string(blockSize));
-                std::cout << "✓ Adaptive threshold applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Adaptive threshold applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -343,9 +368,13 @@ int main() {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::invert(currentImage);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("invert");
-                std::cout << "✓ Image inverted. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Image inverted in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -358,14 +387,18 @@ int main() {
                 float gamma;
                 std::cout << "Enter gamma value (e.g., 0.5, 1.0, 2.2): ";
                 std::cin >> gamma;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::gammaCorrection(currentImage, gamma);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 std::string gammaStr = std::to_string(gamma);
                 size_t dotPos = gammaStr.find(".");
                 if (dotPos != std::string::npos) {
                     gammaStr = gammaStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("gamma" + gammaStr);
-                std::cout << "✓ Gamma correction applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Gamma correction applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -378,14 +411,18 @@ int main() {
                 float amount;
                 std::cout << "Enter noise amount (0.0 to 1.0): ";
                 std::cin >> amount;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Noise::saltAndPepper(currentImage, amount);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 std::string amountStr = std::to_string(amount);
                 size_t dotPos = amountStr.find(".");
                 if (dotPos != std::string::npos) {
                     amountStr = amountStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("saltpepper" + amountStr);
-                std::cout << "✓ Salt & pepper noise added. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Salt & pepper noise added in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -400,9 +437,13 @@ int main() {
                 std::cin >> mean;
                 std::cout << "Enter standard deviation (e.g., 25): ";
                 std::cin >> stddev;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Noise::gaussian(currentImage, mean, stddev);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("gaussnoise" + std::to_string((int)stddev));
-                std::cout << "✓ Gaussian noise added. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Gaussian noise added in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -415,14 +456,18 @@ int main() {
                 float variance;
                 std::cout << "Enter variance (e.g., 0.1): ";
                 std::cin >> variance;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Noise::speckle(currentImage, variance);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 std::string varStr = std::to_string(variance);
                 size_t dotPos = varStr.find(".");
                 if (dotPos != std::string::npos) {
                     varStr = varStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("speckle" + varStr);
-                std::cout << "✓ Speckle noise added. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Speckle noise added in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -439,9 +484,13 @@ int main() {
                     std::cout << "⚠ Warning: Kernel size must be odd and >= 3. Using 5 instead.\n";
                     size = 5;
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Filters::boxBlur(currentImage, size);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("boxblur" + std::to_string(size));
-                std::cout << "✓ Box blur applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Box blur applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -461,14 +510,18 @@ int main() {
                 }
                 std::cout << "Enter sigma (e.g., 1.4): ";
                 std::cin >> sigma;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Filters::gaussianBlur(currentImage, size, sigma);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 std::string sigmaStr = std::to_string(sigma);
                 size_t dotPos = sigmaStr.find(".");
                 if (dotPos != std::string::npos) {
                     sigmaStr = sigmaStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("gaussblur" + std::to_string(size) + "s" + sigmaStr);
-                std::cout << "✓ Gaussian blur applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Gaussian blur applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -485,9 +538,13 @@ int main() {
                     std::cout << "⚠ Warning: Kernel size must be odd and >= 3. Using 5 instead.\n";
                     size = 5;
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Filters::medianFilter(currentImage, size);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("median" + std::to_string(size));
-                std::cout << "✓ Median filter applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Median filter applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -505,9 +562,13 @@ int main() {
                 std::cin >> sigmaColor;
                 std::cout << "Enter sigma space (e.g., 75): ";
                 std::cin >> sigmaSpace;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Filters::bilateralFilter(currentImage, diameter, sigmaColor, sigmaSpace);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("bilateral" + std::to_string(diameter));
-                std::cout << "✓ Bilateral filter applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Bilateral filter applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -517,9 +578,13 @@ int main() {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = EdgeDetection::sobel(currentImage);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("sobel");
-                std::cout << "✓ Sobel edge detection applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Sobel edge detection applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -534,9 +599,13 @@ int main() {
                 std::cin >> low;
                 std::cout << "Enter high threshold (e.g., 150): ";
                 std::cin >> high;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = EdgeDetection::canny(currentImage, low, high);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("canny" + std::to_string((int)low) + "x" + std::to_string((int)high));
-                std::cout << "✓ Canny edge detection applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Canny edge detection applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -546,9 +615,13 @@ int main() {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = EdgeDetection::sharpen(currentImage);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("sharpen");
-                std::cout << "✓ Sharpen filter applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Sharpen filter applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -558,9 +631,13 @@ int main() {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = EdgeDetection::prewitt(currentImage);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("prewitt");
-                std::cout << "✓ Prewitt edge detection applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Prewitt edge detection applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -570,9 +647,13 @@ int main() {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = EdgeDetection::laplacian(currentImage);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("laplacian");
-                std::cout << "✓ Laplacian edge detection applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Laplacian edge detection applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -594,25 +675,30 @@ int main() {
                 }
                 auto kernel = Morphological::getStructuringElement(Morphological::StructuringElement::RECTANGLE, size);
                 
+                auto start = std::chrono::high_resolution_clock::now();
                 std::string opName;
                 if (choice == 50) {
                     currentImage = Morphological::erode(currentImage, kernel);
                     opName = "erode" + std::to_string(size);
-                    std::cout << "✓ Erosion applied. (Image in memory - use option 2 to save)\n";
                 } else if (choice == 51) {
                     currentImage = Morphological::dilate(currentImage, kernel);
                     opName = "dilate" + std::to_string(size);
-                    std::cout << "✓ Dilation applied. (Image in memory - use option 2 to save)\n";
                 } else if (choice == 52) {
                     currentImage = Morphological::opening(currentImage, kernel);
                     opName = "open" + std::to_string(size);
-                    std::cout << "✓ Opening applied. (Image in memory - use option 2 to save)\n";
                 } else {
                     currentImage = Morphological::closing(currentImage, kernel);
                     opName = "close" + std::to_string(size);
-                    std::cout << "✓ Closing applied. (Image in memory - use option 2 to save)\n";
                 }
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                
                 appliedOperations.push_back(opName);
+                std::string opDesc = (choice == 50) ? "Erosion" : 
+                                     (choice == 51) ? "Dilation" : 
+                                     (choice == 52) ? "Opening" : "Closing";
+                std::cout << "✓ " << opDesc << " applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -630,9 +716,13 @@ int main() {
                     size = 5;
                 }
                 auto kernel = Morphological::getStructuringElement(Morphological::StructuringElement::RECTANGLE, size);
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Morphological::morphologicalGradient(currentImage, kernel);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("morphgrad" + std::to_string(size));
-                std::cout << "✓ Morphological gradient applied. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Morphological gradient applied in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -645,9 +735,13 @@ int main() {
                 double angle;
                 std::cout << "Enter rotation angle in degrees: ";
                 std::cin >> angle;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Geometric::rotate(currentImage, angle);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("rotate" + std::to_string((int)angle));
-                std::cout << "✓ Image rotated. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Image rotated in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -662,9 +756,13 @@ int main() {
                 std::cin >> width;
                 std::cout << "Enter new height: ";
                 std::cin >> height;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Geometric::resize(currentImage, width, height);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("resize" + std::to_string(width) + "x" + std::to_string(height));
-                std::cout << "✓ Image resized. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Image resized in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -679,9 +777,13 @@ int main() {
                 std::cin >> dx;
                 std::cout << "Enter vertical translation (pixels): ";
                 std::cin >> dy;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Geometric::translate(currentImage, dx, dy);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("translate" + std::to_string(dx) + "x" + std::to_string(dy));
-                std::cout << "✓ Image translated. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Image translated in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -691,9 +793,13 @@ int main() {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Geometric::flipHorizontal(currentImage);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("fliph");
-                std::cout << "✓ Image flipped horizontally. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Image flipped horizontally in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -703,9 +809,13 @@ int main() {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = Geometric::flipVertical(currentImage);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("flipv");
-                std::cout << "✓ Image flipped vertically. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Image flipped vertically in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -715,8 +825,12 @@ int main() {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 auto channels = ColorOps::splitChannels(currentImage);
-                std::cout << "✓ Channels split. Saving...\n";
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+                std::cout << "✓ Channels split in " << duration.count() 
+                          << " ms (Serial). Saving...\n";
                 for (size_t i = 0; i < channels.size(); ++i) {
                     std::string baseName = getBaseName(fs::path(currentFilename).filename().string());
                     std::string fname = outputFolder + "/" + baseName + "_channel_" + std::to_string(i) + ".png";
@@ -732,9 +846,13 @@ int main() {
                     std::cout << "✗ No image loaded.\n"; 
                     break; 
                 }
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = ColorOps::rgbToHsv(currentImage);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("hsv");
-                std::cout << "✓ Converted to HSV. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Converted to HSV in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -747,9 +865,13 @@ int main() {
                 float delta;
                 std::cout << "Enter hue delta (-180 to 180): ";
                 std::cin >> delta;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = ColorOps::adjustHue(currentImage, delta);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 appliedOperations.push_back("hue" + std::to_string((int)delta));
-                std::cout << "✓ Hue adjusted. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Hue adjusted in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -762,14 +884,18 @@ int main() {
                 float factor;
                 std::cout << "Enter saturation factor (0.0 to 2.0): ";
                 std::cin >> factor;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = ColorOps::adjustSaturation(currentImage, factor);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
                 if (dotPos != std::string::npos) {
                     factorStr = factorStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("sat" + factorStr);
-                std::cout << "✓ Saturation adjusted. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Saturation adjusted in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -782,14 +908,18 @@ int main() {
                 float factor;
                 std::cout << "Enter value factor (0.0 to 2.0): ";
                 std::cin >> factor;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = ColorOps::adjustValue(currentImage, factor);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
                 if (dotPos != std::string::npos) {
                     factorStr = factorStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("val" + factorStr);
-                std::cout << "✓ Value adjusted. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Value adjusted in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
@@ -806,7 +936,10 @@ int main() {
                 std::cin >> g;
                 std::cout << "Enter blue factor (0.0 to 2.0): ";
                 std::cin >> b;
+                auto start = std::chrono::high_resolution_clock::now();
                 currentImage = ColorOps::colorBalance(currentImage, r, g, b);
+                auto end = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
                 std::string rStr = std::to_string(r);
                 std::string gStr = std::to_string(g);
                 std::string bStr = std::to_string(b);
@@ -817,7 +950,8 @@ int main() {
                 dotPos = bStr.find(".");
                 if (dotPos != std::string::npos) bStr = bStr.substr(0, dotPos + 1);
                 appliedOperations.push_back("colbal" + rStr + "x" + gStr + "x" + bStr);
-                std::cout << "✓ Color balance adjusted. (Image in memory - use option 2 to save)\n";
+                std::cout << "✓ Color balance adjusted in " << duration.count() 
+                          << " ms (Serial)\n";
                 break;
             }
             
