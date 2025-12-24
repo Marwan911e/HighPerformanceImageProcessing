@@ -1,4 +1,4 @@
-#include "image.h"
+﻿#include "image.h"
 #include "point_operations.h"
 #include "point_operations_mpi.h"
 #include "noise.h"
@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
                                 double sizeMB = fileSize / (1024.0 * 1024.0);
                                 std::cout << "  " << std::setw(2) << (i + 1) << ". " 
                                           << std::setw(30) << std::left << images[i]
-                                          << " (" << std::fixed << std::setprecision(2) 
+                                          << " (" << std::fixed << std::setprecision(4) 
                                           << sizeMB << " MB)\n";
                             } else {
                                 std::cout << "  " << std::setw(2) << (i + 1) << ". " 
@@ -314,12 +314,14 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 if (rank == 0) {
                     appliedOperations.push_back("grayscale");
                     std::cout << "✓ Converted to grayscale in " << std::fixed 
-                              << std::setprecision(2) << elapsed_ms 
-                              << " ms (MPI, " << size << " processes)\n";
+                              << std::setprecision(4) << elapsed_ms 
+                              << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 }
                 break;
             }
@@ -351,8 +353,8 @@ int main(int argc, char** argv) {
                     if (rank == 0) {
                         appliedOperations.push_back("brightness" + std::to_string(delta));
                         std::cout << "✓ Brightness adjusted in " << std::fixed 
-                                  << std::setprecision(2) << elapsed_ms 
-                                  << " ms (MPI, " << size << " processes)\n";
+                                  << std::setprecision(4) << elapsed_ms 
+                                  << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                     }
                 }
                 break;
@@ -390,8 +392,8 @@ int main(int argc, char** argv) {
                         }
                         appliedOperations.push_back("contrast" + factorStr);
                         std::cout << "✓ Contrast adjusted in " << std::fixed 
-                                  << std::setprecision(2) << elapsed_ms 
-                                  << " ms (MPI, " << size << " processes)\n";
+                                  << std::setprecision(4) << elapsed_ms 
+                                  << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                     }
                 }
                 break;
@@ -424,8 +426,8 @@ int main(int argc, char** argv) {
                     if (rank == 0) {
                         appliedOperations.push_back("threshold" + std::to_string(thresh));
                         std::cout << "✓ Threshold applied in " << std::fixed 
-                                  << std::setprecision(2) << elapsed_ms 
-                                  << " ms (MPI, " << size << " processes)\n";
+                                  << std::setprecision(4) << elapsed_ms 
+                                  << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                     }
                 }
                 break;
@@ -445,11 +447,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("otsu");
                 std::cout << "✓ Otsu threshold applied in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -474,11 +477,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("adaptthresh" + std::to_string(blockSize));
                 std::cout << "✓ Adaptive threshold applied in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -499,12 +503,13 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 if (rank == 0) {
                     appliedOperations.push_back("invert");
                     std::cout << "✓ Image inverted in " << std::fixed 
-                              << std::setprecision(2) << elapsed_ms 
-                              << " ms (MPI, " << size << " processes)\n";
+                              << std::setprecision(4) << elapsed_ms 
+                              << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 }
                 break;
             }
@@ -526,6 +531,7 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 std::string gammaStr = std::to_string(gamma);
                 size_t dotPos = gammaStr.find(".");
@@ -534,8 +540,8 @@ int main(int argc, char** argv) {
                 }
                 appliedOperations.push_back("gamma" + gammaStr);
                 std::cout << "✓ Gamma correction applied in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -556,6 +562,7 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 std::string amountStr = std::to_string(amount);
                 size_t dotPos = amountStr.find(".");
@@ -564,8 +571,8 @@ int main(int argc, char** argv) {
                 }
                 appliedOperations.push_back("saltpepper" + amountStr);
                 std::cout << "✓ Salt & pepper noise added in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -588,11 +595,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("gaussnoise" + std::to_string((int)stddev));
                 std::cout << "✓ Gaussian noise added in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -613,6 +621,7 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 std::string varStr = std::to_string(variance);
                 size_t dotPos = varStr.find(".");
@@ -621,8 +630,8 @@ int main(int argc, char** argv) {
                 }
                 appliedOperations.push_back("speckle" + varStr);
                 std::cout << "✓ Speckle noise added in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -647,11 +656,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("boxblur" + std::to_string(size));
                 std::cout << "✓ Box blur applied in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -679,6 +689,7 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 std::string sigmaStr = std::to_string(sigma);
                 size_t dotPos = sigmaStr.find(".");
@@ -687,8 +698,8 @@ int main(int argc, char** argv) {
                 }
                 appliedOperations.push_back("gaussblur" + std::to_string(size) + "s" + sigmaStr);
                 std::cout << "✓ Gaussian blur applied in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -713,11 +724,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("median" + std::to_string(size));
                 std::cout << "✓ Median filter applied in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -743,11 +755,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("bilateral" + std::to_string(diameter));
                 std::cout << "✓ Bilateral filter applied in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -765,11 +778,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("sobel");
                 std::cout << "✓ Sobel edge detection applied in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -792,11 +806,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("canny" + std::to_string((int)low) + "x" + std::to_string((int)high));
                 std::cout << "✓ Canny edge detection applied in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -814,11 +829,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("sharpen");
                 std::cout << "✓ Sharpen filter applied in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -836,11 +852,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("prewitt");
                 std::cout << "✓ Prewitt edge detection applied in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -858,11 +875,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("laplacian");
                 std::cout << "✓ Laplacian edge detection applied in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -905,14 +923,15 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back(opName);
                 std::string opDesc = (choice == 50) ? "Erosion" : 
                                      (choice == 51) ? "Dilation" : 
                                      (choice == 52) ? "Opening" : "Closing";
                 std::cout << "✓ " << opDesc << " applied in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -938,11 +957,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("morphgrad" + std::to_string(size));
                 std::cout << "✓ Morphological gradient applied in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -963,11 +983,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("rotate" + std::to_string((int)angle));
                 std::cout << "✓ Image rotated in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -990,11 +1011,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("resize" + std::to_string(width) + "x" + std::to_string(height));
                 std::cout << "✓ Image resized in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -1017,11 +1039,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("translate" + std::to_string(dx) + "x" + std::to_string(dy));
                 std::cout << "✓ Image translated in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -1039,11 +1062,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("fliph");
                 std::cout << "✓ Image flipped horizontally in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -1061,11 +1085,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("flipv");
                 std::cout << "✓ Image flipped vertically in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -1083,9 +1108,10 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 std::cout << "✓ Channels split in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
+                          << std::setprecision(4) << elapsed_ms 
                           << " ms (MPI, " << size << " processes). Saving...\n";
                 for (size_t i = 0; i < channels.size(); ++i) {
                     std::string baseName = getBaseName(fs::path(currentFilename).filename().string());
@@ -1110,11 +1136,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("hsv");
                 std::cout << "✓ Converted to HSV in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -1135,11 +1162,12 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 appliedOperations.push_back("hue" + std::to_string((int)delta));
                 std::cout << "✓ Hue adjusted in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -1160,6 +1188,7 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
@@ -1168,8 +1197,8 @@ int main(int argc, char** argv) {
                 }
                 appliedOperations.push_back("sat" + factorStr);
                 std::cout << "✓ Saturation adjusted in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -1190,6 +1219,7 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
@@ -1198,8 +1228,8 @@ int main(int argc, char** argv) {
                 }
                 appliedOperations.push_back("val" + factorStr);
                 std::cout << "✓ Value adjusted in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
@@ -1224,6 +1254,7 @@ int main(int argc, char** argv) {
                 // End timing
                 double end_time = MPI_Wtime();
                 double elapsed_ms = (end_time - start_time) * 1000.0;
+                long long elapsed_us = (long long)((end_time - start_time) * 1000000.0);
                 
                 std::string rStr = std::to_string(r);
                 std::string gStr = std::to_string(g);
@@ -1236,8 +1267,8 @@ int main(int argc, char** argv) {
                 if (dotPos != std::string::npos) bStr = bStr.substr(0, dotPos + 1);
                 appliedOperations.push_back("colbal" + rStr + "x" + gStr + "x" + bStr);
                 std::cout << "✓ Color balance adjusted in " << std::fixed 
-                          << std::setprecision(2) << elapsed_ms 
-                          << " ms (MPI, " << size << " processes)\n";
+                          << std::setprecision(4) << elapsed_ms 
+                          << " ms (" << elapsed_us << " μs) (MPI, " << size << " processes)\n";
                 break;
             }
             
