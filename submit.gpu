@@ -2,7 +2,7 @@
 #SBATCH --job-name=image_process_cuda
 #SBATCH --output=output_%j.out
 #SBATCH --error=error_%j.err
-#SBATCH --time=01:00:00
+#SBATCH --time=00:05:00
 #SBATCH --gres=gpu:1
 
 # Navigate to project directory
