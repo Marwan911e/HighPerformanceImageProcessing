@@ -65,18 +65,34 @@ fi
 echo ""
 
 echo "=== Recommendation ==="
-if [ -n "$FOUND" ]; then
-    CUDA_INC=$(echo "$FOUND" | head -1 | xargs dirname)
-    echo "Set CUDA_HOME to:"
-    CUDA_BASE=$(dirname "$CUDA_INC")
-    echo "  export CUDA_HOME=$CUDA_BASE"
-    echo ""
-    echo "Or add to build command:"
-    echo "  CUDA_HOME=$CUDA_BASE ./build_cluster_aast.sh"
+# Check submit.nvcc verbose output for actual CUDA path
+if command -v submit.nvcc &> /dev/null; then
+    NVCC_VERBOSE=$(submit.nvcc -E -x cu - -v < /dev/null 2>&1)
+    CUDA_PATH_FROM_NVCC=$(echo "$NVCC_VERBOSE" | grep "INCLUDES=" | sed 's|.*-I\([^"]*\)/include.*|\1|' | sed 's|/bin/\.\.//||' | head -1)
+    
+    if [ -n "$CUDA_PATH_FROM_NVCC" ] && [ -d "$CUDA_PATH_FROM_NVCC" ]; then
+        echo "✓ Found CUDA from submit.nvcc: $CUDA_PATH_FROM_NVCC"
+        echo ""
+        echo "Set CUDA_HOME to:"
+        echo "  export CUDA_HOME=$CUDA_PATH_FROM_NVCC"
+        echo ""
+        echo "Or add to build command:"
+        echo "  CUDA_HOME=$CUDA_PATH_FROM_NVCC ./build_cluster_aast.sh"
+    elif [ -n "$FOUND" ]; then
+        CUDA_INC=$(echo "$FOUND" | head -1 | xargs dirname)
+        CUDA_BASE=$(dirname "$CUDA_INC")
+        echo "Set CUDA_HOME to:"
+        echo "  export CUDA_HOME=$CUDA_BASE"
+        echo ""
+        echo "Or add to build command:"
+        echo "  CUDA_HOME=$CUDA_BASE ./build_cluster_aast.sh"
+    else
+        echo "CUDA not found automatically. Please:"
+        echo "  1. Ask cluster administrator for CUDA location"
+        echo "  2. Or check cluster documentation"
+        echo "  3. Or try: find /usr /opt -name 'nvcc' 2>/dev/null"
+    fi
 else
-    echo "CUDA not found automatically. Please:"
-    echo "  1. Ask cluster administrator for CUDA location"
-    echo "  2. Or check cluster documentation"
-    echo "  3. Or try: find /usr /opt -name 'nvcc' 2>/dev/null"
+    echo "submit.nvcc not found. Please check cluster documentation."
 fi
 

@@ -57,20 +57,41 @@ if [ -z "$CUDA_INC_DIR" ] || [ ! -d "$CUDA_INC_DIR" ]; then
     
     # Try to get include path from submit.nvcc by checking its verbose output
     NVCC_VERBOSE=$(submit.nvcc -E -x cu - -v < /dev/null 2>&1)
-    CUDA_INC_FROM_NVCC=$(echo "$NVCC_VERBOSE" | grep -oP '(?<=-I)[^\s]+' | grep -i cuda | head -1)
     
-    if [ -n "$CUDA_INC_FROM_NVCC" ] && [ -d "$CUDA_INC_FROM_NVCC" ]; then
-        CUDA_INC_DIR="$CUDA_INC_FROM_NVCC"
+    # Extract include path from verbose output (looks like: -I/usr/local/cuda-10.0/bin/..//include)
+    CUDA_INC_FROM_NVCC=$(echo "$NVCC_VERBOSE" | grep "INCLUDES=" | sed 's/.*-I\([^"]*\).*/\1/' | head -1)
+    
+    # Clean up the path (remove /bin/..// and normalize)
+    if [ -n "$CUDA_INC_FROM_NVCC" ]; then
+        CUDA_INC_FROM_NVCC=$(echo "$CUDA_INC_FROM_NVCC" | sed 's|/bin/\.\.//||' | sed 's|//|/|g')
+        
+        # If it ends with /include, use it; otherwise try adding /include
+        if [ -d "$CUDA_INC_FROM_NVCC" ]; then
+            CUDA_INC_DIR="$CUDA_INC_FROM_NVCC"
+        elif [ -d "$(dirname "$CUDA_INC_FROM_NVCC")/include" ]; then
+            CUDA_INC_DIR="$(dirname "$CUDA_INC_FROM_NVCC")/include"
+        fi
+    fi
+    
+    # Alternative: extract CUDA base path and add /include
+    if [ -z "$CUDA_INC_DIR" ] || [ ! -d "$CUDA_INC_DIR" ]; then
+        CUDA_BASE=$(echo "$NVCC_VERBOSE" | grep "INCLUDES=" | sed 's|.*-I\([^"]*\)/include.*|\1|' | sed 's|/bin/\.\.//||' | head -1)
+        if [ -n "$CUDA_BASE" ] && [ -d "$CUDA_BASE/include" ]; then
+            CUDA_INC_DIR="$CUDA_BASE/include"
+        fi
+    fi
+    
+    if [ -n "$CUDA_INC_DIR" ] && [ -d "$CUDA_INC_DIR" ]; then
         echo "Found CUDA includes from submit.nvcc: $CUDA_INC_DIR"
     else
         echo ""
         echo "ERROR: Cannot find CUDA include directory!"
         echo ""
-        echo "Please run: ./find_cuda.sh  (if available)"
-        echo "Or set CUDA_HOME manually:"
-        echo "  export CUDA_HOME=/path/to/cuda"
-        echo "  Example: export CUDA_HOME=/usr/local/cuda-10.0"
+        echo "From submit.nvcc verbose output, CUDA appears to be at: /usr/local/cuda-10.0"
+        echo "Try setting:"
+        echo "  export CUDA_HOME=/usr/local/cuda-10.0"
         echo ""
+        echo "Or run: ./find_cuda.sh  (if available)"
         echo "Then run this script again."
         exit 1
     fi
