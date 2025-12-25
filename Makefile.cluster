@@ -1,0 +1,89 @@
+# Makefile for cluster build without CMake
+# Usage: make -f Makefile.cluster
+
+# Find CUDA
+CUDA_HOME ?= $(shell find /usr/local /opt -maxdepth 2 -name "nvcc" -type f 2>/dev/null | head -1 | xargs dirname | xargs dirname)
+ifeq ($(CUDA_HOME),)
+    CUDA_HOME = /usr/local/cuda
+endif
+
+# Verify CUDA
+NVCC := $(shell which nvcc 2>/dev/null || echo $(CUDA_HOME)/bin/nvcc)
+ifeq ($(wildcard $(NVCC)),)
+    $(error CUDA not found. Set CUDA_HOME or ensure nvcc is in PATH)
+endif
+
+# Compilers
+CXX = g++
+NVCC = $(CUDA_HOME)/bin/nvcc
+
+# Flags
+NVCC_FLAGS = -arch=sm_70 -O3 -std=c++17 --compiler-options -fPIC -Xcompiler -fopenmp
+CXX_FLAGS = -O3 -std=c++17 -fPIC -fopenmp
+
+# Directories
+INCLUDE_DIRS = -Iinclude -Ilib -I$(CUDA_HOME)/include
+LIB_DIRS = -L$(CUDA_HOME)/lib64 -L$(CUDA_HOME)/lib
+
+# Libraries
+LIBS = -lcudart -lcuda
+
+# Source files
+CUDA_SOURCES = src/cuda_kernels.cu
+CPP_SOURCES = src/main_cuda.cpp src/image.cpp src/cuda_utils.cpp \
+              src/filters_cuda.cpp src/edge_detection_cuda.cpp \
+              src/point_operations.cpp src/noise.cpp \
+              src/morphological.cpp src/geometric.cpp src/color_operations.cpp
+
+# Object files
+CUDA_OBJS = $(CUDA_SOURCES:.cu=.o)
+CPP_OBJS = $(CPP_SOURCES:.cpp=.o)
+
+# Target
+TARGET = image_processor_cuda
+
+# Default target
+all: $(TARGET)
+	@echo ""
+	@echo "Build complete! Run with: ./$(TARGET)"
+
+# Link
+$(TARGET): $(CUDA_OBJS) $(CPP_OBJS)
+	@echo "Linking $(TARGET)..."
+	$(CXX) $(CPP_OBJS) $(CUDA_OBJS) -o $(TARGET) $(LIB_DIRS) $(LIBS)
+
+# Compile CUDA files
+%.o: %.cu
+	@echo "Compiling $<..."
+	$(NVCC) $(NVCC_FLAGS) $(INCLUDE_DIRS) -c $< -o $@
+
+# Compile C++ files
+%.o: %.cpp
+	@echo "Compiling $<..."
+	$(CXX) $(CXX_FLAGS) $(INCLUDE_DIRS) -c $< -o $@
+
+# Clean
+clean:
+	rm -f $(TARGET) $(CUDA_OBJS) $(CPP_OBJS)
+	@echo "Clean complete"
+
+# Help
+help:
+	@echo "CUDA Image Processor - Cluster Makefile"
+	@echo ""
+	@echo "Usage: make -f Makefile.cluster [target]"
+	@echo ""
+	@echo "Targets:"
+	@echo "  all     - Build the application (default)"
+	@echo "  clean   - Remove build artifacts"
+	@echo "  help    - Show this help message"
+	@echo ""
+	@echo "Environment variables:"
+	@echo "  CUDA_HOME - Path to CUDA installation (auto-detected if not set)"
+	@echo ""
+	@echo "Example:"
+	@echo "  export CUDA_HOME=/usr/local/cuda-11.8"
+	@echo "  make -f Makefile.cluster"
+
+.PHONY: all clean help
+
