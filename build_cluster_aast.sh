@@ -31,10 +31,18 @@ else
 fi
 
 # Find CUDA include directory for g++ compilation
-# Priority: 1) extract from submit.nvcc, 2) CUDA_HOME/CUDA_PATH, 3) common locations
+# Priority: 1) extract from submit.nvcc (ALWAYS first, ignore Python packages), 2) CUDA_HOME/CUDA_PATH (if not Python), 3) common locations
 CUDA_INC_DIR=""
 
-# First, try to extract from submit.nvcc (most reliable)
+# Check if CUDA_HOME is set to a Python package (should be ignored)
+if [ -n "$CUDA_HOME" ]; then
+    if echo "$CUDA_HOME" | grep -q "site-packages\|python\|llamaenv"; then
+        echo "WARNING: CUDA_HOME points to Python package, ignoring it: $CUDA_HOME"
+        unset CUDA_HOME
+    fi
+fi
+
+# First, ALWAYS try to extract from submit.nvcc (most reliable, ignores environment)
 echo "Extracting CUDA path from submit.nvcc..."
 NVCC_VERBOSE=$(submit.nvcc -E -x cu - -v < /dev/null 2>&1)
 CUDA_INC_LINE=$(echo "$NVCC_VERBOSE" | grep "INCLUDES=" | head -1)
@@ -53,22 +61,28 @@ if [ -n "$CUDA_INC_LINE" ]; then
         CUDA_BASE=$(echo "$FULL_PATH" | sed 's|/bin/.*||')
         CUDA_BASE=$(echo "$CUDA_BASE" | sed 's|//|/|g')
         
-        # Check if base/include exists
+        # Check if base/include exists and is NOT a Python package
         if [ -n "$CUDA_BASE" ] && [ -d "$CUDA_BASE/include" ] && [ -f "$CUDA_BASE/include/cuda_runtime.h" ]; then
-            CUDA_INC_DIR="$CUDA_BASE/include"
-            echo "Found CUDA from submit.nvcc: $CUDA_INC_DIR"
+            if ! echo "$CUDA_BASE" | grep -q "site-packages\|python\|llamaenv"; then
+                CUDA_INC_DIR="$CUDA_BASE/include"
+                echo "Found CUDA from submit.nvcc: $CUDA_INC_DIR"
+            fi
         fi
     fi
 fi
 
-# If not found from submit.nvcc, try environment variables
+# If not found from submit.nvcc, try environment variables (but skip Python packages)
 if [ -z "$CUDA_INC_DIR" ]; then
     if [ -n "$CUDA_HOME" ] && [ -d "$CUDA_HOME/include" ] && [ -f "$CUDA_HOME/include/cuda_runtime.h" ]; then
-        CUDA_INC_DIR="$CUDA_HOME/include"
-        echo "Found CUDA from CUDA_HOME: $CUDA_INC_DIR"
+        if ! echo "$CUDA_HOME" | grep -q "site-packages\|python\|llamaenv"; then
+            CUDA_INC_DIR="$CUDA_HOME/include"
+            echo "Found CUDA from CUDA_HOME: $CUDA_INC_DIR"
+        fi
     elif [ -n "$CUDA_PATH" ] && [ -d "$CUDA_PATH/include" ] && [ -f "$CUDA_PATH/include/cuda_runtime.h" ]; then
-        CUDA_INC_DIR="$CUDA_PATH/include"
-        echo "Found CUDA from CUDA_PATH: $CUDA_INC_DIR"
+        if ! echo "$CUDA_PATH" | grep -q "site-packages\|python\|llamaenv"; then
+            CUDA_INC_DIR="$CUDA_PATH/include"
+            echo "Found CUDA from CUDA_PATH: $CUDA_INC_DIR"
+        fi
     fi
 fi
 
