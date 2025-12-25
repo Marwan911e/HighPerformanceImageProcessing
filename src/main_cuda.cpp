@@ -359,7 +359,6 @@ int main(int argc, char** argv) {
                 }
                 currentImage = PointOps::grayscale(currentImage);
                 appliedOperations.push_back("grayscale");
-                std::cout << "✓ Converted to grayscale (CPU)\n";
                 break;
             }
             
@@ -374,7 +373,6 @@ int main(int argc, char** argv) {
                 std::cin >> delta;
                 currentImage = PointOps::adjustBrightness(currentImage, delta);
                 appliedOperations.push_back("brightness" + std::to_string(delta));
-                std::cout << "✓ Brightness adjusted (CPU)\n";
                 break;
             }
             
@@ -394,7 +392,6 @@ int main(int argc, char** argv) {
                     factorStr = factorStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("contrast" + factorStr);
-                std::cout << "✓ Contrast adjusted (CPU)\n";
                 break;
             }
             
@@ -409,7 +406,6 @@ int main(int argc, char** argv) {
                 std::cin >> thresh;
                 currentImage = PointOps::threshold(currentImage, thresh);
                 appliedOperations.push_back("threshold" + std::to_string(thresh));
-                std::cout << "✓ Threshold applied (CPU)\n";
                 break;
             }
             
@@ -421,7 +417,6 @@ int main(int argc, char** argv) {
                 }
                 currentImage = PointOps::thresholdOtsu(currentImage);
                 appliedOperations.push_back("otsu");
-                std::cout << "✓ Otsu threshold applied (CPU)\n";
                 break;
             }
             
@@ -440,7 +435,6 @@ int main(int argc, char** argv) {
                 }
                 currentImage = PointOps::adaptiveThreshold(currentImage, blockSize, 2, true);
                 appliedOperations.push_back("adaptthresh" + std::to_string(blockSize));
-                std::cout << "✓ Adaptive threshold applied (CPU)\n";
                 break;
             }
             
@@ -452,7 +446,6 @@ int main(int argc, char** argv) {
                 }
                 currentImage = PointOps::invert(currentImage);
                 appliedOperations.push_back("invert");
-                std::cout << "✓ Image inverted (CPU)\n";
                 break;
             }
             
@@ -472,7 +465,6 @@ int main(int argc, char** argv) {
                     gammaStr = gammaStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("gamma" + gammaStr);
-                std::cout << "✓ Gamma correction applied (CPU)\n";
                 break;
             }
             
@@ -492,7 +484,6 @@ int main(int argc, char** argv) {
                     amountStr = amountStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("saltpepper" + amountStr);
-                std::cout << "✓ Salt & pepper noise added (CPU)\n";
                 break;
             }
             
@@ -509,7 +500,6 @@ int main(int argc, char** argv) {
                 std::cin >> stddev;
                 currentImage = Noise::gaussian(currentImage, mean, stddev);
                 appliedOperations.push_back("gaussnoise" + std::to_string((int)stddev));
-                std::cout << "✓ Gaussian noise added (CPU)\n";
                 break;
             }
             
@@ -529,7 +519,6 @@ int main(int argc, char** argv) {
                     varStr = varStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("speckle" + varStr);
-                std::cout << "✓ Speckle noise added (CPU)\n";
                 break;
             }
             
@@ -567,10 +556,6 @@ int main(int argc, char** argv) {
                 }
                 
                 appliedOperations.push_back(opName);
-                std::string opDesc = (choice == 50) ? "Erosion" :
-                                     (choice == 51) ? "Dilation" :
-                                     (choice == 52) ? "Opening" : "Closing";
-                std::cout << "✓ " << opDesc << " applied (CPU)\n";
                 break;
             }
             
@@ -590,7 +575,6 @@ int main(int argc, char** argv) {
                 auto kernel = Morphological::getStructuringElement(Morphological::StructuringElement::RECTANGLE, size);
                 currentImage = Morphological::morphologicalGradient(currentImage, kernel);
                 appliedOperations.push_back("morphgrad" + std::to_string(size));
-                std::cout << "✓ Morphological gradient applied (CPU)\n";
                 break;
             }
             
@@ -605,7 +589,6 @@ int main(int argc, char** argv) {
                 std::cin >> angle;
                 currentImage = Geometric::rotate(currentImage, angle);
                 appliedOperations.push_back("rotate" + std::to_string((int)angle));
-                std::cout << "✓ Image rotated (CPU)\n";
                 break;
             }
             
@@ -622,7 +605,6 @@ int main(int argc, char** argv) {
                 std::cin >> height;
                 currentImage = Geometric::resize(currentImage, width, height);
                 appliedOperations.push_back("resize" + std::to_string(width) + "x" + std::to_string(height));
-                std::cout << "✓ Image resized (CPU)\n";
                 break;
             }
             
@@ -639,7 +621,6 @@ int main(int argc, char** argv) {
                 std::cin >> dy;
                 currentImage = Geometric::translate(currentImage, dx, dy);
                 appliedOperations.push_back("translate" + std::to_string(dx) + "x" + std::to_string(dy));
-                std::cout << "✓ Image translated (CPU)\n";
                 break;
             }
             
@@ -651,7 +632,6 @@ int main(int argc, char** argv) {
                 }
                 currentImage = Geometric::flipHorizontal(currentImage);
                 appliedOperations.push_back("fliph");
-                std::cout << "✓ Image flipped horizontally (CPU)\n";
                 break;
             }
             
@@ -663,7 +643,6 @@ int main(int argc, char** argv) {
                 }
                 currentImage = Geometric::flipVertical(currentImage);
                 appliedOperations.push_back("flipv");
-                std::cout << "✓ Image flipped vertically (CPU)\n";
                 break;
             }
             
@@ -674,7 +653,6 @@ int main(int argc, char** argv) {
                     break;
                 }
                 auto channels = ColorOps::splitChannels(currentImage);
-                std::cout << "✓ Channels split (CPU). Saving...\n";
                 for (size_t i = 0; i < channels.size(); ++i) {
                     std::string baseName = getBaseName(fs::path(currentFilename).filename().string());
                     std::string fname = outputFolder + "/" + baseName + "_channel_" + std::to_string(i) + ".png";
@@ -692,7 +670,6 @@ int main(int argc, char** argv) {
                 }
                 currentImage = ColorOps::rgbToHsv(currentImage);
                 appliedOperations.push_back("hsv");
-                std::cout << "✓ Converted to HSV (CPU)\n";
                 break;
             }
             
@@ -707,7 +684,6 @@ int main(int argc, char** argv) {
                 std::cin >> delta;
                 currentImage = ColorOps::adjustHue(currentImage, delta);
                 appliedOperations.push_back("hue" + std::to_string((int)delta));
-                std::cout << "✓ Hue adjusted (CPU)\n";
                 break;
             }
             
@@ -727,7 +703,6 @@ int main(int argc, char** argv) {
                     factorStr = factorStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("sat" + factorStr);
-                std::cout << "✓ Saturation adjusted (CPU)\n";
                 break;
             }
             
@@ -747,7 +722,6 @@ int main(int argc, char** argv) {
                     factorStr = factorStr.substr(0, dotPos + 2);
                 }
                 appliedOperations.push_back("val" + factorStr);
-                std::cout << "✓ Value adjusted (CPU)\n";
                 break;
             }
             
@@ -775,7 +749,6 @@ int main(int argc, char** argv) {
                 dotPos = bStr.find(".");
                 if (dotPos != std::string::npos) bStr = bStr.substr(0, dotPos + 1);
                 appliedOperations.push_back("colbal" + rStr + "x" + gStr + "x" + bStr);
-                std::cout << "✓ Color balance adjusted (CPU)\n";
                 break;
             }
             
@@ -787,10 +760,13 @@ int main(int argc, char** argv) {
         auto end_time = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end_time - start_time);
         
-        if (choice >= 30 && choice <= 44) {
+        // Print timing for all operations (skip menu options 0, 1, 2)
+        if (choice != 0 && choice != 1 && choice != 2) {
+            double duration_ms = duration.count() / 1000.0;
+            std::string mode = (choice >= 30 && choice <= 44) ? "CUDA" : "CPU";
             std::cout << "✓ Operation completed in " << std::fixed 
-                      << std::setprecision(4) << duration.count() / 1000.0 
-                      << " ms (" << duration.count() << " μs) (CUDA)\n";
+                      << std::setprecision(4) << duration_ms 
+                      << " ms (" << duration.count() << " μs) (" << mode << ")\n";
         }
     }
     
