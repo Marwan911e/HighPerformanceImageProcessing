@@ -52,14 +52,32 @@ else
 fi
 
 if [ -z "$CUDA_INC_DIR" ] || [ ! -d "$CUDA_INC_DIR" ]; then
-    echo "ERROR: Cannot find CUDA include directory!"
-    echo "Please set CUDA_HOME environment variable"
-    echo "Example: export CUDA_HOME=/usr/local/cuda-10.0"
-    exit 1
-else
-    CUDA_INC_FLAG="-I$CUDA_INC_DIR"
-    echo "Using CUDA includes: $CUDA_INC_DIR"
+    echo "WARNING: Cannot find CUDA include directory automatically."
+    echo "Attempting to extract from submit.nvcc..."
+    
+    # Try to get include path from submit.nvcc by checking its verbose output
+    NVCC_VERBOSE=$(submit.nvcc -E -x cu - -v < /dev/null 2>&1)
+    CUDA_INC_FROM_NVCC=$(echo "$NVCC_VERBOSE" | grep -oP '(?<=-I)[^\s]+' | grep -i cuda | head -1)
+    
+    if [ -n "$CUDA_INC_FROM_NVCC" ] && [ -d "$CUDA_INC_FROM_NVCC" ]; then
+        CUDA_INC_DIR="$CUDA_INC_FROM_NVCC"
+        echo "Found CUDA includes from submit.nvcc: $CUDA_INC_DIR"
+    else
+        echo ""
+        echo "ERROR: Cannot find CUDA include directory!"
+        echo ""
+        echo "Please run: ./find_cuda.sh  (if available)"
+        echo "Or set CUDA_HOME manually:"
+        echo "  export CUDA_HOME=/path/to/cuda"
+        echo "  Example: export CUDA_HOME=/usr/local/cuda-10.0"
+        echo ""
+        echo "Then run this script again."
+        exit 1
+    fi
 fi
+
+CUDA_INC_FLAG="-I$CUDA_INC_DIR"
+echo "Using CUDA includes: $CUDA_INC_DIR"
 echo ""
 
 # Create build directory
