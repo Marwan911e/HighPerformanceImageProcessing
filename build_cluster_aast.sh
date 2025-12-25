@@ -25,17 +25,16 @@ mkdir -p build
 cd build
 
 # Check CUDA version and set appropriate C++ standard
-CUDA_VERSION=$(submit.nvcc --version | grep "release" | sed 's/.*release \([0-9]\+\.[0-9]\+\).*/\1/')
-echo "Detected CUDA version: $CUDA_VERSION"
-
 # CUDA 10.0 and earlier don't support C++17, use C++14
-if [ "$(echo "$CUDA_VERSION < 11.0" | bc 2>/dev/null || echo "1")" = "1" ]; then
+CUDA_VER_OUT=$(submit.nvcc --version 2>&1)
+if echo "$CUDA_VER_OUT" | grep -q "release 10\."; then
     CPP_STD="c++14"
-    echo "Using C++14 (CUDA 10.x compatibility)"
+    echo "Detected CUDA 10.x - Using C++14 (C++17 not supported)"
 else
     CPP_STD="c++17"
-    echo "Using C++17"
+    echo "Detected CUDA 11.x or later - Using C++17"
 fi
+echo ""
 
 # Compile CUDA kernels
 echo "Compiling CUDA kernels..."
