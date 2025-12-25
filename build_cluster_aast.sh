@@ -30,104 +30,9 @@ else
     echo "Detected CUDA 11.x or later - Using C++17"
 fi
 
-# Find CUDA include directory for g++ compilation
-# Priority: 1) extract from submit.nvcc (ALWAYS first, ignore Python packages), 2) CUDA_HOME/CUDA_PATH (if not Python), 3) common locations
-CUDA_INC_DIR=""
-
-# Check if CUDA_HOME is set to a Python package (should be ignored)
-if [ -n "$CUDA_HOME" ]; then
-    if echo "$CUDA_HOME" | grep -q "site-packages\|python\|llamaenv"; then
-        echo "WARNING: CUDA_HOME points to Python package, ignoring it: $CUDA_HOME"
-        unset CUDA_HOME
-    fi
-fi
-
-# Extract CUDA include path from submit.nvcc (most reliable)
-# submit.nvcc has access to headers even if they're not directly accessible
-echo "Extracting CUDA path from submit.nvcc..."
-NVCC_VERBOSE=$(submit.nvcc -E -x cu - -v < /dev/null 2>&1)
-CUDA_INC_LINE=$(echo "$NVCC_VERBOSE" | grep "INCLUDES=" | head -1)
-
-if [ -n "$CUDA_INC_LINE" ]; then
-    # Extract the include path directly from the INCLUDES line
-    # Pattern: #$ INCLUDES="-I/usr/local/cuda-10.0/bin/..//include"
-    # Try quoted first
-    FULL_PATH=$(echo "$CUDA_INC_LINE" | sed 's/.*-I"\([^"]*\)".*/\1/')
-    
-    # If that didn't work, try unquoted
-    if [ "$FULL_PATH" = "$CUDA_INC_LINE" ]; then
-        FULL_PATH=$(echo "$CUDA_INC_LINE" | sed 's/.*-I\([^ "]*\).*/\1/')
-    fi
-    
-    if [ -n "$FULL_PATH" ] && [ "$FULL_PATH" != "$CUDA_INC_LINE" ]; then
-        # Normalize the path: /usr/local/cuda-10.0/bin/..//include -> /usr/local/cuda-10.0/include
-        NORMALIZED=$(echo "$FULL_PATH" | sed 's|/bin/\.\.//include|/include|' | sed 's|//|/|g')
-        
-        # Use the normalized path even if we can't verify it exists
-        # submit.nvcc uses it, so it should work for g++ too
-        if [ -n "$NORMALIZED" ] && ! echo "$NORMALIZED" | grep -q "site-packages\|python\|llamaenv"; then
-            CUDA_INC_DIR="$NORMALIZED"
-            echo "Using CUDA path from submit.nvcc: $CUDA_INC_DIR"
-            echo "  (Path may not be directly accessible, but submit.nvcc uses it)"
-        fi
-    fi
-fi
-
-# If extraction failed, try direct check of common locations
-if [ -z "$CUDA_INC_DIR" ]; then
-    for CUDA_BASE in "/usr/local/cuda-10.0" "/usr/local/cuda" "/opt/cuda"; do
-        if [ -d "$CUDA_BASE/include" ] && [ -f "$CUDA_BASE/include/cuda_runtime.h" ]; then
-            CUDA_INC_DIR="$CUDA_BASE/include"
-            echo "Found CUDA at: $CUDA_INC_DIR"
-            break
-        fi
-    done
-fi
-
-# If not found from submit.nvcc, try environment variables (but skip Python packages)
-if [ -z "$CUDA_INC_DIR" ]; then
-    if [ -n "$CUDA_HOME" ] && [ -d "$CUDA_HOME/include" ] && [ -f "$CUDA_HOME/include/cuda_runtime.h" ]; then
-        if ! echo "$CUDA_HOME" | grep -q "site-packages\|python\|llamaenv"; then
-            CUDA_INC_DIR="$CUDA_HOME/include"
-            echo "Found CUDA from CUDA_HOME: $CUDA_INC_DIR"
-        fi
-    elif [ -n "$CUDA_PATH" ] && [ -d "$CUDA_PATH/include" ] && [ -f "$CUDA_PATH/include/cuda_runtime.h" ]; then
-        if ! echo "$CUDA_PATH" | grep -q "site-packages\|python\|llamaenv"; then
-            CUDA_INC_DIR="$CUDA_PATH/include"
-            echo "Found CUDA from CUDA_PATH: $CUDA_INC_DIR"
-        fi
-    fi
-fi
-
-# If still not found, try common locations
-if [ -z "$CUDA_INC_DIR" ]; then
-    for path in /usr/local/cuda-10.0/include /usr/local/cuda/include /opt/cuda/include; do
-        if [ -d "$path" ] && [ -f "$path/cuda_runtime.h" ]; then
-            CUDA_INC_DIR="$path"
-            echo "Found CUDA in common location: $CUDA_INC_DIR"
-            break
-        fi
-    done
-fi
-
-# Verify we found a CUDA include directory
-# Note: We don't check if the directory exists because submit.nvcc might use
-# headers that aren't directly accessible but work during compilation
-if [ -z "$CUDA_INC_DIR" ]; then
-    echo ""
-    echo "ERROR: Cannot extract CUDA include directory from submit.nvcc!"
-    echo ""
-    echo "From submit.nvcc verbose output, CUDA should be at: /usr/local/cuda-10.0"
-    echo "Try setting manually:"
-    echo "  export CUDA_HOME=/usr/local/cuda-10.0"
-    echo "  ./build_cluster_aast.sh"
-    echo ""
-    echo "Or run: ./find_cuda.sh  (if available)"
-    exit 1
-fi
-
-CUDA_INC_FLAG="-I$CUDA_INC_DIR"
-echo "Using CUDA includes: $CUDA_INC_DIR"
+echo ""
+echo "NOTE: Building with submit.nvcc for BOTH CUDA (.cu) and C++ (.cpp) files."
+echo "This avoids issues where g++ cannot see CUDA headers on the login node."
 echo ""
 
 # Create build directory
@@ -141,22 +46,22 @@ submit.nvcc -c ../src/cuda_kernels.cu -o cuda_kernels.o -I../include -I../lib -a
 
 # Compile C++ sources
 echo "Compiling C++ sources..."
-g++ -c ../src/main_cuda.cpp -o main_cuda.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/image.cpp -o image.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/cuda_utils.cpp -o cuda_utils.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/filters_cuda.cpp -o filters_cuda.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/edge_detection_cuda.cpp -o edge_detection_cuda.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/point_operations.cpp -o point_operations.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/noise.cpp -o noise.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/morphological.cpp -o morphological.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/geometric.cpp -o geometric.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/color_operations.cpp -o color_operations.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
+submit.nvcc -c ../src/main_cuda.cpp -o main_cuda.o -I../include -I../lib -O3 -std=$CPP_STD
+submit.nvcc -c ../src/image.cpp -o image.o -I../include -I../lib -O3 -std=$CPP_STD
+submit.nvcc -c ../src/cuda_utils.cpp -o cuda_utils.o -I../include -I../lib -O3 -std=$CPP_STD
+submit.nvcc -c ../src/filters_cuda.cpp -o filters_cuda.o -I../include -I../lib -O3 -std=$CPP_STD
+submit.nvcc -c ../src/edge_detection_cuda.cpp -o edge_detection_cuda.o -I../include -I../lib -O3 -std=$CPP_STD
+submit.nvcc -c ../src/point_operations.cpp -o point_operations.o -I../include -I../lib -O3 -std=$CPP_STD
+submit.nvcc -c ../src/noise.cpp -o noise.o -I../include -I../lib -O3 -std=$CPP_STD
+submit.nvcc -c ../src/morphological.cpp -o morphological.o -I../include -I../lib -O3 -std=$CPP_STD
+submit.nvcc -c ../src/geometric.cpp -o geometric.o -I../include -I../lib -O3 -std=$CPP_STD
+submit.nvcc -c ../src/color_operations.cpp -o color_operations.o -I../include -I../lib -O3 -std=$CPP_STD
 
 # Link
 echo "Linking executable..."
-g++ main_cuda.o image.o cuda_utils.o filters_cuda.o edge_detection_cuda.o \
+submit.nvcc main_cuda.o image.o cuda_utils.o filters_cuda.o edge_detection_cuda.o \
     point_operations.o noise.o morphological.o geometric.o color_operations.o \
-    cuda_kernels.o -o image_processor_cuda -lcudart -lm
+    cuda_kernels.o -o image_processor_cuda -lm
 
 cd ..
 
