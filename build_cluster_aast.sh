@@ -33,6 +33,7 @@ fi
 echo ""
 echo "NOTE: Building with submit.nvcc for BOTH CUDA (.cu) and C++ (.cpp) files."
 echo "This avoids issues where g++ cannot see CUDA headers on the login node."
+echo "BUT: main_cuda.cpp uses <filesystem> (C++17), so we compile main_cuda.cpp with g++ -std=c++17 (it no longer includes CUDA headers)."
 echo ""
 
 # Create build directory
@@ -46,7 +47,7 @@ submit.nvcc -c ../src/cuda_kernels.cu -o cuda_kernels.o -I../include -I../lib -a
 
 # Compile C++ sources
 echo "Compiling C++ sources..."
-submit.nvcc -c ../src/main_cuda.cpp -o main_cuda.o -I../include -I../lib -O3 -std=$CPP_STD
+g++ -c ../src/main_cuda.cpp -o main_cuda.o -I../include -I../lib -O3 -std=c++17
 submit.nvcc -c ../src/image.cpp -o image.o -I../include -I../lib -O3 -std=$CPP_STD
 submit.nvcc -c ../src/cuda_utils.cpp -o cuda_utils.o -I../include -I../lib -O3 -std=$CPP_STD
 submit.nvcc -c ../src/filters_cuda.cpp -o filters_cuda.o -I../include -I../lib -O3 -std=$CPP_STD

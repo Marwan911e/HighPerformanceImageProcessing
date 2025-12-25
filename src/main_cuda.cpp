@@ -6,7 +6,6 @@
 #include "morphological.h"
 #include "geometric.h"
 #include "color_operations.h"
-#include "cuda_utils.h"
 #include <iostream>
 #include <string>
 #include <iomanip>
@@ -15,7 +14,6 @@
 #include <algorithm>
 #include <cstring>
 #include <chrono>
-#include <cuda_runtime.h>
 
 namespace fs = std::filesystem;
 
@@ -103,24 +101,10 @@ void displayMenu() {
 }
 
 int main(int argc, char** argv) {
-    // Initialize CUDA
-    int deviceCount;
-    CUDA_CHECK(cudaGetDeviceCount(&deviceCount));
-    if (deviceCount == 0) {
-        std::cerr << "No CUDA devices found!" << std::endl;
-        return 1;
-    }
-    
-    CUDA_CHECK(cudaSetDevice(0));
-    
-    cudaDeviceProp prop;
-    CUDA_CHECK(cudaGetDeviceProperties(&prop, 0));
     std::cout << "========================================\n";
     std::cout << "  IMAGE PROCESSING APPLICATION (CUDA)\n";
     std::cout << "========================================\n";
-    std::cout << "CUDA Device: " << prop.name << "\n";
-    std::cout << "Compute Capability: " << prop.major << "." << prop.minor << "\n";
-    std::cout << "Global Memory: " << prop.totalGlobalMem / (1024 * 1024) << " MB\n";
+    std::cout << "Note: CUDA device will be used by CUDA kernels internally.\n";
     
     Image currentImage;
     std::string currentFilename;
