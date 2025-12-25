@@ -29,6 +29,37 @@ else
     CPP_STD="c++17"
     echo "Detected CUDA 11.x or later - Using C++17"
 fi
+
+# Find CUDA include directory for g++ compilation
+CUDA_INC_DIR=""
+if [ -n "$CUDA_HOME" ]; then
+    CUDA_INC_DIR="$CUDA_HOME/include"
+elif [ -n "$CUDA_PATH" ]; then
+    CUDA_INC_DIR="$CUDA_PATH/include"
+else
+    # Try common locations
+    for path in /usr/local/cuda/include /usr/local/cuda-10.0/include /opt/cuda/include /usr/include; do
+        if [ -d "$path" ] && [ -f "$path/cuda_runtime.h" ]; then
+            CUDA_INC_DIR="$path"
+            break
+        fi
+    done
+    
+    # If still not found, search for cuda_runtime.h
+    if [ -z "$CUDA_INC_DIR" ]; then
+        CUDA_INC_DIR=$(find /usr /opt -name "cuda_runtime.h" 2>/dev/null | head -1 | xargs dirname 2>/dev/null || echo "")
+    fi
+fi
+
+if [ -z "$CUDA_INC_DIR" ] || [ ! -d "$CUDA_INC_DIR" ]; then
+    echo "ERROR: Cannot find CUDA include directory!"
+    echo "Please set CUDA_HOME environment variable"
+    echo "Example: export CUDA_HOME=/usr/local/cuda-10.0"
+    exit 1
+else
+    CUDA_INC_FLAG="-I$CUDA_INC_DIR"
+    echo "Using CUDA includes: $CUDA_INC_DIR"
+fi
 echo ""
 
 # Create build directory
