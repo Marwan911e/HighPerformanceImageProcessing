@@ -52,7 +52,7 @@ if [ -n "$CUDA_INC_LINE" ]; then
     # Pattern: -I/usr/local/cuda-10.0/bin/..//include or -I"/usr/local/cuda-10.0/bin/..//include"
     FULL_PATH=$(echo "$CUDA_INC_LINE" | sed 's/.*-I"\([^"]*\)".*/\1/')
     if [ "$FULL_PATH" = "$CUDA_INC_LINE" ]; then
-        # Try without quotes
+        # Try without quotes - match -I followed by path
         FULL_PATH=$(echo "$CUDA_INC_LINE" | sed 's/.*-I\([^ "]*\).*/\1/')
     fi
     
@@ -68,6 +68,14 @@ if [ -n "$CUDA_INC_LINE" ]; then
                 echo "Found CUDA from submit.nvcc: $CUDA_INC_DIR"
             fi
         fi
+    fi
+fi
+
+# If extraction failed, try direct check of /usr/local/cuda-10.0 (from submit.nvcc output we know it's there)
+if [ -z "$CUDA_INC_DIR" ]; then
+    if [ -d "/usr/local/cuda-10.0/include" ] && [ -f "/usr/local/cuda-10.0/include/cuda_runtime.h" ]; then
+        CUDA_INC_DIR="/usr/local/cuda-10.0/include"
+        echo "Found CUDA at standard location: $CUDA_INC_DIR"
     fi
 fi
 
