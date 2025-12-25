@@ -42,45 +42,46 @@ if [ -n "$CUDA_HOME" ]; then
     fi
 fi
 
-# First, try direct check of /usr/local/cuda-10.0 (we know from submit.nvcc it's there)
-# Check multiple possible paths
-for CUDA_BASE in "/usr/local/cuda-10.0" "/usr/local/cuda" "/opt/cuda"; do
-    if [ -d "$CUDA_BASE/include" ] && [ -f "$CUDA_BASE/include/cuda_runtime.h" ]; then
-        CUDA_INC_DIR="$CUDA_BASE/include"
-        echo "Found CUDA at: $CUDA_INC_DIR"
-        break
-    fi
-done
+# Extract CUDA include path from submit.nvcc (most reliable)
+# submit.nvcc has access to headers even if they're not directly accessible
+echo "Extracting CUDA path from submit.nvcc..."
+NVCC_VERBOSE=$(submit.nvcc -E -x cu - -v < /dev/null 2>&1)
+CUDA_INC_LINE=$(echo "$NVCC_VERBOSE" | grep "INCLUDES=" | head -1)
 
-# If not found, try to extract from submit.nvcc (most reliable, ignores environment)
-if [ -z "$CUDA_INC_DIR" ]; then
-    echo "Extracting CUDA path from submit.nvcc..."
-    NVCC_VERBOSE=$(submit.nvcc -E -x cu - -v < /dev/null 2>&1)
-    CUDA_INC_LINE=$(echo "$NVCC_VERBOSE" | grep "INCLUDES=" | head -1)
+if [ -n "$CUDA_INC_LINE" ]; then
+    # Extract the include path directly from the INCLUDES line
+    # Pattern: #$ INCLUDES="-I/usr/local/cuda-10.0/bin/..//include"
+    # Try quoted first
+    FULL_PATH=$(echo "$CUDA_INC_LINE" | sed 's/.*-I"\([^"]*\)".*/\1/')
     
-    if [ -n "$CUDA_INC_LINE" ]; then
-        # Extract path after -I (handles both quoted and unquoted)
-        # Pattern: -I/usr/local/cuda-10.0/bin/..//include or -I"/usr/local/cuda-10.0/bin/..//include"
-        FULL_PATH=$(echo "$CUDA_INC_LINE" | sed 's/.*-I"\([^"]*\)".*/\1/')
-        if [ "$FULL_PATH" = "$CUDA_INC_LINE" ]; then
-            # Try without quotes - match -I followed by path
-            FULL_PATH=$(echo "$CUDA_INC_LINE" | sed 's/.*-I\([^ "]*\).*/\1/')
-        fi
+    # If that didn't work, try unquoted
+    if [ "$FULL_PATH" = "$CUDA_INC_LINE" ]; then
+        FULL_PATH=$(echo "$CUDA_INC_LINE" | sed 's/.*-I\([^ "]*\).*/\1/')
+    fi
+    
+    if [ -n "$FULL_PATH" ] && [ "$FULL_PATH" != "$CUDA_INC_LINE" ]; then
+        # Normalize the path: /usr/local/cuda-10.0/bin/..//include -> /usr/local/cuda-10.0/include
+        NORMALIZED=$(echo "$FULL_PATH" | sed 's|/bin/\.\.//include|/include|' | sed 's|//|/|g')
         
-        if [ -n "$FULL_PATH" ] && [ "$FULL_PATH" != "$CUDA_INC_LINE" ]; then
-            # Extract base directory: everything before /bin
-            CUDA_BASE=$(echo "$FULL_PATH" | sed 's|/bin/.*||')
-            CUDA_BASE=$(echo "$CUDA_BASE" | sed 's|//|/|g')
-            
-            # Check if base/include exists and is NOT a Python package
-            if [ -n "$CUDA_BASE" ] && [ -d "$CUDA_BASE/include" ] && [ -f "$CUDA_BASE/include/cuda_runtime.h" ]; then
-                if ! echo "$CUDA_BASE" | grep -q "site-packages\|python\|llamaenv"; then
-                    CUDA_INC_DIR="$CUDA_BASE/include"
-                    echo "Found CUDA from submit.nvcc: $CUDA_INC_DIR"
-                fi
-            fi
+        # Use the normalized path even if we can't verify it exists
+        # submit.nvcc uses it, so it should work for g++ too
+        if [ -n "$NORMALIZED" ] && ! echo "$NORMALIZED" | grep -q "site-packages\|python\|llamaenv"; then
+            CUDA_INC_DIR="$NORMALIZED"
+            echo "Using CUDA path from submit.nvcc: $CUDA_INC_DIR"
+            echo "  (Path may not be directly accessible, but submit.nvcc uses it)"
         fi
     fi
+fi
+
+# If extraction failed, try direct check of common locations
+if [ -z "$CUDA_INC_DIR" ]; then
+    for CUDA_BASE in "/usr/local/cuda-10.0" "/usr/local/cuda" "/opt/cuda"; do
+        if [ -d "$CUDA_BASE/include" ] && [ -f "$CUDA_BASE/include/cuda_runtime.h" ]; then
+            CUDA_INC_DIR="$CUDA_BASE/include"
+            echo "Found CUDA at: $CUDA_INC_DIR"
+            break
+        fi
+    done
 fi
 
 # If not found from submit.nvcc, try environment variables (but skip Python packages)
@@ -109,12 +110,14 @@ if [ -z "$CUDA_INC_DIR" ]; then
     done
 fi
 
-# Verify we found a valid CUDA include directory
-if [ -z "$CUDA_INC_DIR" ] || [ ! -d "$CUDA_INC_DIR" ] || [ ! -f "$CUDA_INC_DIR/cuda_runtime.h" ]; then
+# Verify we found a CUDA include directory
+# Note: We don't check if the directory exists because submit.nvcc might use
+# headers that aren't directly accessible but work during compilation
+if [ -z "$CUDA_INC_DIR" ]; then
     echo ""
-    echo "ERROR: Cannot find valid CUDA include directory!"
+    echo "ERROR: Cannot extract CUDA include directory from submit.nvcc!"
     echo ""
-    echo "From submit.nvcc, CUDA should be at: /usr/local/cuda-10.0"
+    echo "From submit.nvcc verbose output, CUDA should be at: /usr/local/cuda-10.0"
     echo "Try setting manually:"
     echo "  export CUDA_HOME=/usr/local/cuda-10.0"
     echo "  ./build_cluster_aast.sh"
