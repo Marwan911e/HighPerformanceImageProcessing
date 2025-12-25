@@ -58,33 +58,30 @@ if [ -z "$CUDA_INC_DIR" ] || [ ! -d "$CUDA_INC_DIR" ]; then
     # Try to get include path from submit.nvcc by checking its verbose output
     NVCC_VERBOSE=$(submit.nvcc -E -x cu - -v < /dev/null 2>&1)
     
-    # Extract include path from verbose output
+    # Extract CUDA base path from verbose output
     # Line looks like: #$ INCLUDES="-I/usr/local/cuda-10.0/bin/..//include"
     CUDA_INC_LINE=$(echo "$NVCC_VERBOSE" | grep "INCLUDES=" | head -1)
     
     if [ -n "$CUDA_INC_LINE" ]; then
-        # Extract the path: match -I"path" and extract path
-        # Pattern: -I/usr/local/cuda-10.0/bin/..//include
-        CUDA_INC_FROM_NVCC=$(echo "$CUDA_INC_LINE" | sed 's/.*-I"\([^"]*\)".*/\1/' | sed 's/.*-I\([^ ]*\).*/\1/')
+        # Extract the full include path first
+        # Match pattern: -I/usr/local/cuda-10.0/bin/..//include
+        FULL_PATH=$(echo "$CUDA_INC_LINE" | grep -oP '(?<=-I)[^"]+' | head -1)
         
-        # Clean up the path (remove /bin/..// and normalize)
-        if [ -n "$CUDA_INC_FROM_NVCC" ]; then
-            # Remove /bin/..// and normalize double slashes
-            CUDA_INC_FROM_NVCC=$(echo "$CUDA_INC_FROM_NVCC" | sed 's|/bin/\.\.//|/|g' | sed 's|//|/|g')
-            
-            # Verify the path exists and contains cuda_runtime.h
-            if [ -d "$CUDA_INC_FROM_NVCC" ] && [ -f "$CUDA_INC_FROM_NVCC/cuda_runtime.h" ]; then
-                CUDA_INC_DIR="$CUDA_INC_FROM_NVCC"
-            fi
+        if [ -z "$FULL_PATH" ]; then
+            # Try without quotes
+            FULL_PATH=$(echo "$CUDA_INC_LINE" | grep -oP '(?<=-I)[^\s"]+' | head -1)
         fi
         
-        # Alternative: extract CUDA base directory (e.g., /usr/local/cuda-10.0)
-        if [ -z "$CUDA_INC_DIR" ] || [ ! -d "$CUDA_INC_DIR" ]; then
-            # Extract base path before /bin/..//include
-            CUDA_BASE=$(echo "$CUDA_INC_LINE" | sed 's|.*-I"\([^"]*\)/bin/\.\.//include".*|\1|' | sed 's|.*-I\([^ ]*\)/bin/\.\.//include.*|\1|')
-            if [ -n "$CUDA_BASE" ] && [ "$CUDA_BASE" != "$CUDA_INC_LINE" ]; then
-                CUDA_BASE=$(echo "$CUDA_BASE" | sed 's|//|/|g')
-                if [ -d "$CUDA_BASE/include" ] && [ -f "$CUDA_BASE/include/cuda_runtime.h" ]; then
+        if [ -n "$FULL_PATH" ]; then
+            # Normalize: /usr/local/cuda-10.0/bin/..//include -> /usr/local/cuda-10.0/include
+            NORMALIZED=$(echo "$FULL_PATH" | sed 's|/bin/\.\.//include|/include|' | sed 's|//|/|g')
+            
+            if [ -d "$NORMALIZED" ] && [ -f "$NORMALIZED/cuda_runtime.h" ]; then
+                CUDA_INC_DIR="$NORMALIZED"
+            else
+                # Extract base directory (everything before /bin)
+                CUDA_BASE=$(echo "$FULL_PATH" | sed 's|/bin/.*||' | sed 's|//|/|g')
+                if [ -n "$CUDA_BASE" ] && [ -d "$CUDA_BASE/include" ] && [ -f "$CUDA_BASE/include/cuda_runtime.h" ]; then
                     CUDA_INC_DIR="$CUDA_BASE/include"
                 fi
             fi
