@@ -43,10 +43,14 @@ if [ -n "$CUDA_HOME" ]; then
 fi
 
 # First, try direct check of /usr/local/cuda-10.0 (we know from submit.nvcc it's there)
-if [ -d "/usr/local/cuda-10.0/include" ] && [ -f "/usr/local/cuda-10.0/include/cuda_runtime.h" ]; then
-    CUDA_INC_DIR="/usr/local/cuda-10.0/include"
-    echo "Found CUDA at standard location: $CUDA_INC_DIR"
-fi
+# Check multiple possible paths
+for CUDA_BASE in "/usr/local/cuda-10.0" "/usr/local/cuda" "/opt/cuda"; do
+    if [ -d "$CUDA_BASE/include" ] && [ -f "$CUDA_BASE/include/cuda_runtime.h" ]; then
+        CUDA_INC_DIR="$CUDA_BASE/include"
+        echo "Found CUDA at: $CUDA_INC_DIR"
+        break
+    fi
+done
 
 # If not found, try to extract from submit.nvcc (most reliable, ignores environment)
 if [ -z "$CUDA_INC_DIR" ]; then
