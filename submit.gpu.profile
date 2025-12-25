@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH --job-name=image_process_cuda
+#SBATCH --output=output_%j.out
+#SBATCH --error=error_%j.err
+#SBATCH --time=01:00:00
+#SBATCH --gres=gpu:1
+
+# Navigate to project directory
+cd $SLURM_SUBMIT_DIR
+
+# Run with performance profiling (cache hit/miss)
+perf stat -d $@
+

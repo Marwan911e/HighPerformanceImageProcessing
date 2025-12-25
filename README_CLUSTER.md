@@ -1,8 +1,44 @@
 # Quick Start: Building and Running on HPC Cluster
 
-## Quick Build Steps
+## For AAST Cluster (with submit.nvcc)
 
-### 1. Load Modules
+### 1. Pull Latest Code
+```bash
+cd ~/HighPerformanceImageProcessing
+git checkout cuda
+git pull origin cuda
+```
+
+### 2. Build
+```bash
+chmod +x build_cluster_aast.sh
+./build_cluster_aast.sh
+```
+
+### 3. Submit Job
+```bash
+# Basic
+sbatch submit.gpu "./build/image_processor_cuda"
+
+# With timing
+sbatch submit.gpu.timed "./build/image_processor_cuda"
+
+# With profiling
+sbatch submit.gpu.profile "./build/image_processor_cuda"
+```
+
+### 4. Monitor Jobs
+```bash
+watch -n 1 "squeue"
+```
+
+See `AAST_CLUSTER_GUIDE.md` for detailed instructions.
+
+---
+
+## For Other Clusters
+
+### 1. Load Modules (if available)
 ```bash
 module load cuda/11.8 gcc/9.4.0 cmake/3.20
 ```
