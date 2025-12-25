@@ -16,17 +16,12 @@ if ! command -v submit.nvcc &> /dev/null; then
 fi
 
 echo "Using cluster's submit.nvcc compiler"
-submit.nvcc --version 2>/dev/null || echo "submit.nvcc found"
+CUDA_VER_OUT=$(submit.nvcc --version 2>&1)
+echo "$CUDA_VER_OUT"
 echo ""
-
-# Create build directory
-echo "Creating build directory..."
-mkdir -p build
-cd build
 
 # Check CUDA version and set appropriate C++ standard
 # CUDA 10.0 and earlier don't support C++17, use C++14
-CUDA_VER_OUT=$(submit.nvcc --version 2>&1)
 if echo "$CUDA_VER_OUT" | grep -q "release 10\."; then
     CPP_STD="c++14"
     echo "Detected CUDA 10.x - Using C++14 (C++17 not supported)"
@@ -35,6 +30,11 @@ else
     echo "Detected CUDA 11.x or later - Using C++17"
 fi
 echo ""
+
+# Create build directory
+echo "Creating build directory..."
+mkdir -p build
+cd build
 
 # Compile CUDA kernels
 echo "Compiling CUDA kernels..."
