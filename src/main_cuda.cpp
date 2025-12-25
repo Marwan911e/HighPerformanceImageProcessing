@@ -225,6 +225,8 @@ int main(int argc, char** argv) {
                     kernelSize = 5;
                 }
                 
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = FiltersCUDA::boxBlur(currentImage, kernelSize);
                 appliedOperations.push_back("boxblur" + std::to_string(kernelSize));
                 break;
@@ -245,6 +247,8 @@ int main(int argc, char** argv) {
                 std::cout << "Enter sigma (e.g., 1.4): ";
                 std::cin >> sigma;
                 
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = FiltersCUDA::gaussianBlur(currentImage, kernelSize, sigma);
                 std::string sigmaStr = std::to_string(sigma);
                 size_t dotPos = sigmaStr.find(".");
@@ -267,6 +271,8 @@ int main(int argc, char** argv) {
                     kernelSize = 5;
                 }
                 
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = FiltersCUDA::medianFilter(currentImage, kernelSize);
                 appliedOperations.push_back("median" + std::to_string(kernelSize));
                 break;
@@ -286,6 +292,8 @@ int main(int argc, char** argv) {
                 std::cout << "Enter sigma space (e.g., 75): ";
                 std::cin >> sigmaSpace;
                 
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = FiltersCUDA::bilateralFilter(currentImage, diameter, sigmaColor, sigmaSpace);
                 appliedOperations.push_back("bilateral" + std::to_string(diameter));
                 break;
@@ -313,6 +321,8 @@ int main(int argc, char** argv) {
                 std::cout << "Enter high threshold (e.g., 150): ";
                 std::cin >> high;
                 
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = EdgeDetectionCUDA::canny(currentImage, low, high);
                 appliedOperations.push_back("canny" + std::to_string((int)low) + "x" + std::to_string((int)high));
                 break;
@@ -371,6 +381,8 @@ int main(int argc, char** argv) {
                 int delta;
                 std::cout << "Enter brightness delta (-255 to 255): ";
                 std::cin >> delta;
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::adjustBrightness(currentImage, delta);
                 appliedOperations.push_back("brightness" + std::to_string(delta));
                 break;
@@ -385,6 +397,8 @@ int main(int argc, char** argv) {
                 float factor;
                 std::cout << "Enter contrast factor (0.0 to 3.0): ";
                 std::cin >> factor;
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::adjustContrast(currentImage, factor);
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
@@ -404,6 +418,8 @@ int main(int argc, char** argv) {
                 int thresh;
                 std::cout << "Enter threshold value (0-255): ";
                 std::cin >> thresh;
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::threshold(currentImage, thresh);
                 appliedOperations.push_back("threshold" + std::to_string(thresh));
                 break;
@@ -433,6 +449,8 @@ int main(int argc, char** argv) {
                     std::cout << "⚠ Warning: Block size must be odd and >= 3. Using 11 instead.\n";
                     blockSize = 11;
                 }
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::adaptiveThreshold(currentImage, blockSize, 2, true);
                 appliedOperations.push_back("adaptthresh" + std::to_string(blockSize));
                 break;
@@ -458,6 +476,8 @@ int main(int argc, char** argv) {
                 float gamma;
                 std::cout << "Enter gamma value (e.g., 0.5, 1.0, 2.2): ";
                 std::cin >> gamma;
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = PointOps::gammaCorrection(currentImage, gamma);
                 std::string gammaStr = std::to_string(gamma);
                 size_t dotPos = gammaStr.find(".");
@@ -477,6 +497,8 @@ int main(int argc, char** argv) {
                 float amount;
                 std::cout << "Enter noise amount (0.0 to 1.0): ";
                 std::cin >> amount;
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = Noise::saltAndPepper(currentImage, amount);
                 std::string amountStr = std::to_string(amount);
                 size_t dotPos = amountStr.find(".");
@@ -498,6 +520,8 @@ int main(int argc, char** argv) {
                 std::cin >> mean;
                 std::cout << "Enter standard deviation (e.g., 25): ";
                 std::cin >> stddev;
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = Noise::gaussian(currentImage, mean, stddev);
                 appliedOperations.push_back("gaussnoise" + std::to_string((int)stddev));
                 break;
@@ -512,6 +536,8 @@ int main(int argc, char** argv) {
                 float variance;
                 std::cout << "Enter variance (e.g., 0.1): ";
                 std::cin >> variance;
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = Noise::speckle(currentImage, variance);
                 std::string varStr = std::to_string(variance);
                 size_t dotPos = varStr.find(".");
@@ -540,6 +566,8 @@ int main(int argc, char** argv) {
                 }
                 auto kernel = Morphological::getStructuringElement(Morphological::StructuringElement::RECTANGLE, size);
                 
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 std::string opName;
                 if (choice == 50) {
                     currentImage = Morphological::erode(currentImage, kernel);
@@ -573,6 +601,8 @@ int main(int argc, char** argv) {
                     size = 5;
                 }
                 auto kernel = Morphological::getStructuringElement(Morphological::StructuringElement::RECTANGLE, size);
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = Morphological::morphologicalGradient(currentImage, kernel);
                 appliedOperations.push_back("morphgrad" + std::to_string(size));
                 break;
@@ -587,6 +617,8 @@ int main(int argc, char** argv) {
                 double angle;
                 std::cout << "Enter rotation angle in degrees: ";
                 std::cin >> angle;
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = Geometric::rotate(currentImage, angle);
                 appliedOperations.push_back("rotate" + std::to_string((int)angle));
                 break;
@@ -603,6 +635,8 @@ int main(int argc, char** argv) {
                 std::cin >> width;
                 std::cout << "Enter new height: ";
                 std::cin >> height;
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = Geometric::resize(currentImage, width, height);
                 appliedOperations.push_back("resize" + std::to_string(width) + "x" + std::to_string(height));
                 break;
@@ -619,6 +653,8 @@ int main(int argc, char** argv) {
                 std::cin >> dx;
                 std::cout << "Enter vertical translation (pixels): ";
                 std::cin >> dy;
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = Geometric::translate(currentImage, dx, dy);
                 appliedOperations.push_back("translate" + std::to_string(dx) + "x" + std::to_string(dy));
                 break;
@@ -682,6 +718,8 @@ int main(int argc, char** argv) {
                 float delta;
                 std::cout << "Enter hue delta (-180 to 180): ";
                 std::cin >> delta;
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = ColorOps::adjustHue(currentImage, delta);
                 appliedOperations.push_back("hue" + std::to_string((int)delta));
                 break;
@@ -696,6 +734,8 @@ int main(int argc, char** argv) {
                 float factor;
                 std::cout << "Enter saturation factor (0.0 to 2.0): ";
                 std::cin >> factor;
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = ColorOps::adjustSaturation(currentImage, factor);
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
@@ -715,6 +755,8 @@ int main(int argc, char** argv) {
                 float factor;
                 std::cout << "Enter value factor (0.0 to 2.0): ";
                 std::cin >> factor;
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = ColorOps::adjustValue(currentImage, factor);
                 std::string factorStr = std::to_string(factor);
                 size_t dotPos = factorStr.find(".");
@@ -738,6 +780,8 @@ int main(int argc, char** argv) {
                 std::cin >> g;
                 std::cout << "Enter blue factor (0.0 to 2.0): ";
                 std::cin >> b;
+                // Reset timer to exclude user input time
+                start_time = std::chrono::high_resolution_clock::now();
                 currentImage = ColorOps::colorBalance(currentImage, r, g, b);
                 std::string rStr = std::to_string(r);
                 std::string gStr = std::to_string(g);
