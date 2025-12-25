@@ -31,24 +31,51 @@ else
 fi
 
 # Find CUDA include directory for g++ compilation
+# Priority: 1) CUDA_HOME/CUDA_PATH, 2) extract from submit.nvcc, 3) common locations, 4) search
 CUDA_INC_DIR=""
-if [ -n "$CUDA_HOME" ]; then
-    CUDA_INC_DIR="$CUDA_HOME/include"
-elif [ -n "$CUDA_PATH" ]; then
-    CUDA_INC_DIR="$CUDA_PATH/include"
-else
-    # Try common locations
-    for path in /usr/local/cuda/include /usr/local/cuda-10.0/include /opt/cuda/include /usr/include; do
+
+# First, try to extract from submit.nvcc (most reliable)
+NVCC_VERBOSE=$(submit.nvcc -E -x cu - -v < /dev/null 2>&1)
+CUDA_INC_LINE=$(echo "$NVCC_VERBOSE" | grep "INCLUDES=" | head -1)
+
+if [ -n "$CUDA_INC_LINE" ]; then
+    # Extract path after -I
+    FULL_PATH=$(echo "$CUDA_INC_LINE" | sed 's/.*-I"\([^"]*\)".*/\1/' | sed 's/.*-I\([^ "]*\).*/\1/')
+    
+    if [ -n "$FULL_PATH" ] && [ "$FULL_PATH" != "$CUDA_INC_LINE" ]; then
+        # Extract base directory: everything before /bin
+        CUDA_BASE=$(echo "$FULL_PATH" | sed 's|/bin/.*||')
+        CUDA_BASE=$(echo "$CUDA_BASE" | sed 's|//|/|g')
+        
+        # Check if base/include exists
+        if [ -n "$CUDA_BASE" ] && [ -d "$CUDA_BASE/include" ] && [ -f "$CUDA_BASE/include/cuda_runtime.h" ]; then
+            CUDA_INC_DIR="$CUDA_BASE/include"
+        fi
+    fi
+fi
+
+# If not found from submit.nvcc, try environment variables
+if [ -z "$CUDA_INC_DIR" ]; then
+    if [ -n "$CUDA_HOME" ] && [ -d "$CUDA_HOME/include" ]; then
+        CUDA_INC_DIR="$CUDA_HOME/include"
+    elif [ -n "$CUDA_PATH" ] && [ -d "$CUDA_PATH/include" ]; then
+        CUDA_INC_DIR="$CUDA_PATH/include"
+    fi
+fi
+
+# If still not found, try common locations
+if [ -z "$CUDA_INC_DIR" ]; then
+    for path in /usr/local/cuda/include /usr/local/cuda-10.0/include /opt/cuda/include; do
         if [ -d "$path" ] && [ -f "$path/cuda_runtime.h" ]; then
             CUDA_INC_DIR="$path"
             break
         fi
     done
-    
-    # If still not found, search for cuda_runtime.h
-    if [ -z "$CUDA_INC_DIR" ]; then
-        CUDA_INC_DIR=$(find /usr /opt -name "cuda_runtime.h" 2>/dev/null | head -1 | xargs dirname 2>/dev/null || echo "")
-    fi
+fi
+
+# Last resort: search for cuda_runtime.h (but exclude Python packages)
+if [ -z "$CUDA_INC_DIR" ]; then
+    CUDA_INC_DIR=$(find /usr /opt -name "cuda_runtime.h" 2>/dev/null | grep -v "site-packages" | grep -v "python" | head -1 | xargs dirname 2>/dev/null || echo "")
 fi
 
 if [ -z "$CUDA_INC_DIR" ] || [ ! -d "$CUDA_INC_DIR" ]; then
