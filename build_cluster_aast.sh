@@ -42,16 +42,16 @@ submit.nvcc -c ../src/cuda_kernels.cu -o cuda_kernels.o -I../include -I../lib -a
 
 # Compile C++ sources
 echo "Compiling C++ sources..."
-g++ -c ../src/main_cuda.cpp -o main_cuda.o -I../include -I../lib -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/image.cpp -o image.o -I../include -I../lib -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/cuda_utils.cpp -o cuda_utils.o -I../include -I../lib -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/filters_cuda.cpp -o filters_cuda.o -I../include -I../lib -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/edge_detection_cuda.cpp -o edge_detection_cuda.o -I../include -I../lib -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/point_operations.cpp -o point_operations.o -I../include -I../lib -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/noise.cpp -o noise.o -I../include -I../lib -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/morphological.cpp -o morphological.o -I../include -I../lib -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/geometric.cpp -o geometric.o -I../include -I../lib -O3 -std=$CPP_STD -fPIC
-g++ -c ../src/color_operations.cpp -o color_operations.o -I../include -I../lib -O3 -std=$CPP_STD -fPIC
+g++ -c ../src/main_cuda.cpp -o main_cuda.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
+g++ -c ../src/image.cpp -o image.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
+g++ -c ../src/cuda_utils.cpp -o cuda_utils.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
+g++ -c ../src/filters_cuda.cpp -o filters_cuda.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
+g++ -c ../src/edge_detection_cuda.cpp -o edge_detection_cuda.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
+g++ -c ../src/point_operations.cpp -o point_operations.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
+g++ -c ../src/noise.cpp -o noise.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
+g++ -c ../src/morphological.cpp -o morphological.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
+g++ -c ../src/geometric.cpp -o geometric.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
+g++ -c ../src/color_operations.cpp -o color_operations.o -I../include -I../lib $CUDA_INC_FLAG -O3 -std=$CPP_STD -fPIC
 
 # Link
 echo "Linking executable..."
