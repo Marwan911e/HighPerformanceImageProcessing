@@ -42,40 +42,40 @@ if [ -n "$CUDA_HOME" ]; then
     fi
 fi
 
-# First, ALWAYS try to extract from submit.nvcc (most reliable, ignores environment)
-echo "Extracting CUDA path from submit.nvcc..."
-NVCC_VERBOSE=$(submit.nvcc -E -x cu - -v < /dev/null 2>&1)
-CUDA_INC_LINE=$(echo "$NVCC_VERBOSE" | grep "INCLUDES=" | head -1)
-
-if [ -n "$CUDA_INC_LINE" ]; then
-    # Extract path after -I (handles both quoted and unquoted)
-    # Pattern: -I/usr/local/cuda-10.0/bin/..//include or -I"/usr/local/cuda-10.0/bin/..//include"
-    FULL_PATH=$(echo "$CUDA_INC_LINE" | sed 's/.*-I"\([^"]*\)".*/\1/')
-    if [ "$FULL_PATH" = "$CUDA_INC_LINE" ]; then
-        # Try without quotes - match -I followed by path
-        FULL_PATH=$(echo "$CUDA_INC_LINE" | sed 's/.*-I\([^ "]*\).*/\1/')
-    fi
-    
-    if [ -n "$FULL_PATH" ] && [ "$FULL_PATH" != "$CUDA_INC_LINE" ]; then
-        # Extract base directory: everything before /bin
-        CUDA_BASE=$(echo "$FULL_PATH" | sed 's|/bin/.*||')
-        CUDA_BASE=$(echo "$CUDA_BASE" | sed 's|//|/|g')
-        
-        # Check if base/include exists and is NOT a Python package
-        if [ -n "$CUDA_BASE" ] && [ -d "$CUDA_BASE/include" ] && [ -f "$CUDA_BASE/include/cuda_runtime.h" ]; then
-            if ! echo "$CUDA_BASE" | grep -q "site-packages\|python\|llamaenv"; then
-                CUDA_INC_DIR="$CUDA_BASE/include"
-                echo "Found CUDA from submit.nvcc: $CUDA_INC_DIR"
-            fi
-        fi
-    fi
+# First, try direct check of /usr/local/cuda-10.0 (we know from submit.nvcc it's there)
+if [ -d "/usr/local/cuda-10.0/include" ] && [ -f "/usr/local/cuda-10.0/include/cuda_runtime.h" ]; then
+    CUDA_INC_DIR="/usr/local/cuda-10.0/include"
+    echo "Found CUDA at standard location: $CUDA_INC_DIR"
 fi
 
-# If extraction failed, try direct check of /usr/local/cuda-10.0 (from submit.nvcc output we know it's there)
+# If not found, try to extract from submit.nvcc (most reliable, ignores environment)
 if [ -z "$CUDA_INC_DIR" ]; then
-    if [ -d "/usr/local/cuda-10.0/include" ] && [ -f "/usr/local/cuda-10.0/include/cuda_runtime.h" ]; then
-        CUDA_INC_DIR="/usr/local/cuda-10.0/include"
-        echo "Found CUDA at standard location: $CUDA_INC_DIR"
+    echo "Extracting CUDA path from submit.nvcc..."
+    NVCC_VERBOSE=$(submit.nvcc -E -x cu - -v < /dev/null 2>&1)
+    CUDA_INC_LINE=$(echo "$NVCC_VERBOSE" | grep "INCLUDES=" | head -1)
+    
+    if [ -n "$CUDA_INC_LINE" ]; then
+        # Extract path after -I (handles both quoted and unquoted)
+        # Pattern: -I/usr/local/cuda-10.0/bin/..//include or -I"/usr/local/cuda-10.0/bin/..//include"
+        FULL_PATH=$(echo "$CUDA_INC_LINE" | sed 's/.*-I"\([^"]*\)".*/\1/')
+        if [ "$FULL_PATH" = "$CUDA_INC_LINE" ]; then
+            # Try without quotes - match -I followed by path
+            FULL_PATH=$(echo "$CUDA_INC_LINE" | sed 's/.*-I\([^ "]*\).*/\1/')
+        fi
+        
+        if [ -n "$FULL_PATH" ] && [ "$FULL_PATH" != "$CUDA_INC_LINE" ]; then
+            # Extract base directory: everything before /bin
+            CUDA_BASE=$(echo "$FULL_PATH" | sed 's|/bin/.*||')
+            CUDA_BASE=$(echo "$CUDA_BASE" | sed 's|//|/|g')
+            
+            # Check if base/include exists and is NOT a Python package
+            if [ -n "$CUDA_BASE" ] && [ -d "$CUDA_BASE/include" ] && [ -f "$CUDA_BASE/include/cuda_runtime.h" ]; then
+                if ! echo "$CUDA_BASE" | grep -q "site-packages\|python\|llamaenv"; then
+                    CUDA_INC_DIR="$CUDA_BASE/include"
+                    echo "Found CUDA from submit.nvcc: $CUDA_INC_DIR"
+                fi
+            fi
+        fi
     fi
 fi
 
