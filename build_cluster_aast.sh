@@ -63,8 +63,9 @@ if [ -z "$CUDA_INC_DIR" ] || [ ! -d "$CUDA_INC_DIR" ]; then
     CUDA_INC_LINE=$(echo "$NVCC_VERBOSE" | grep "INCLUDES=" | head -1)
     
     if [ -n "$CUDA_INC_LINE" ]; then
-        # Extract the path between -I and the quote
-        CUDA_INC_FROM_NVCC=$(echo "$CUDA_INC_LINE" | sed 's/.*-I\([^"]*\).*/\1/')
+        # Extract the path: match -I"path" and extract path
+        # Pattern: -I/usr/local/cuda-10.0/bin/..//include
+        CUDA_INC_FROM_NVCC=$(echo "$CUDA_INC_LINE" | sed 's/.*-I"\([^"]*\)".*/\1/' | sed 's/.*-I\([^ ]*\).*/\1/')
         
         # Clean up the path (remove /bin/..// and normalize)
         if [ -n "$CUDA_INC_FROM_NVCC" ]; then
@@ -76,14 +77,17 @@ if [ -z "$CUDA_INC_DIR" ] || [ ! -d "$CUDA_INC_DIR" ]; then
                 CUDA_INC_DIR="$CUDA_INC_FROM_NVCC"
             fi
         fi
-    fi
-    
-    # Alternative: extract CUDA base directory from the path
-    if [ -z "$CUDA_INC_DIR" ] || [ ! -d "$CUDA_INC_DIR" ]; then
-        # Try to extract base path (e.g., /usr/local/cuda-10.0 from /usr/local/cuda-10.0/bin/..//include)
-        CUDA_BASE=$(echo "$CUDA_INC_LINE" | sed 's|.*-I\([^"]*\)/bin/\.\.//include.*|\1|' | sed 's|//|/|g')
-        if [ -n "$CUDA_BASE" ] && [ "$CUDA_BASE" != "$CUDA_INC_LINE" ] && [ -d "$CUDA_BASE/include" ]; then
-            CUDA_INC_DIR="$CUDA_BASE/include"
+        
+        # Alternative: extract CUDA base directory (e.g., /usr/local/cuda-10.0)
+        if [ -z "$CUDA_INC_DIR" ] || [ ! -d "$CUDA_INC_DIR" ]; then
+            # Extract base path before /bin/..//include
+            CUDA_BASE=$(echo "$CUDA_INC_LINE" | sed 's|.*-I"\([^"]*\)/bin/\.\.//include".*|\1|' | sed 's|.*-I\([^ ]*\)/bin/\.\.//include.*|\1|')
+            if [ -n "$CUDA_BASE" ] && [ "$CUDA_BASE" != "$CUDA_INC_LINE" ]; then
+                CUDA_BASE=$(echo "$CUDA_BASE" | sed 's|//|/|g')
+                if [ -d "$CUDA_BASE/include" ] && [ -f "$CUDA_BASE/include/cuda_runtime.h" ]; then
+                    CUDA_INC_DIR="$CUDA_BASE/include"
+                fi
+            fi
         fi
     fi
     
